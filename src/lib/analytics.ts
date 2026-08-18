@@ -19,7 +19,11 @@ export type TaleonEvent =
 /** Fire-and-forget analytics. Never blocks or breaks the UI. */
 export async function track(
   event: TaleonEvent,
-  payload: { storyId?: string; chapterId?: string; metadata?: Record<string, unknown> } = {},
+  payload: {
+    storyId?: string | undefined;
+    chapterId?: string | undefined;
+    metadata?: Record<string, string | number | boolean> | undefined;
+  } = {},
 ) {
   try {
     const { data } = await supabase.auth.getSession();

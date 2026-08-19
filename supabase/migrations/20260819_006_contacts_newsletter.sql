@@ -40,21 +40,21 @@ create policy "Anyone can subscribe"
 -- Admins can read/manage contact submissions
 create policy "Admins read contact submissions"
   on public.contact_submissions for select
-  using (public.is_admin());
+  using (public.has_role(auth.uid(),'admin'));
 
 create policy "Admins update contact submissions"
   on public.contact_submissions for update
-  using (public.is_admin());
+  using (public.has_role(auth.uid(),'admin'));
 
 create policy "Admins delete contact submissions"
   on public.contact_submissions for delete
-  using (public.is_admin());
+  using (public.has_role(auth.uid(),'admin'));
 
 -- Admins can read newsletter subscribers
 create policy "Admins read subscribers"
   on public.newsletter_subscribers for select
-  using (public.is_admin());
+  using (public.has_role(auth.uid(),'admin'));
 
 create policy "Admins manage subscribers"
   on public.newsletter_subscribers for all
-  using (public.is_admin());
+  using (public.has_role(auth.uid(),'admin'));

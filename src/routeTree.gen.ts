@@ -32,11 +32,18 @@ import { Route as ApiNewsletterRouteImport } from './routes/api/newsletter'
 import { Route as StorySlugRouteImport } from './routes/story.$slug'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin/analytics'
 import { Route as AuthenticatedAdminChaptersRouteImport } from './routes/_authenticated/admin/chapters'
+import { Route as AuthenticatedAdminCharactersRouteImport } from './routes/_authenticated/admin/characters'
 import { Route as AuthenticatedAdminContactsRouteImport } from './routes/_authenticated/admin/contacts'
 import { Route as AuthenticatedAdminGenresRouteImport } from './routes/_authenticated/admin/genres'
+import { Route as AuthenticatedAdminLocationsRouteImport } from './routes/_authenticated/admin/locations'
+import { Route as AuthenticatedAdminMediaRouteImport } from './routes/_authenticated/admin/media'
 import { Route as AuthenticatedAdminNewsletterRouteImport } from './routes/_authenticated/admin/newsletter'
+import { Route as AuthenticatedAdminPromptsRouteImport } from './routes/_authenticated/admin/prompts'
+import { Route as AuthenticatedAdminScenesRouteImport } from './routes/_authenticated/admin/scenes'
 import { Route as AuthenticatedAdminStoriesRouteImport } from './routes/_authenticated/admin/stories'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
+import { Route as ApiAdminMediaRouteImport } from './routes/api/admin/media'
+import { Route as ApiAdminMediaAssetIdRouteImport } from './routes/api/admin/media/$assetId'
 import { Route as StorySlugChapterChapterNumberRouteImport } from './routes/story.$slug.chapter.$chapterNumber'
 
 const IndexRoute = IndexRouteImport.update({
@@ -155,6 +162,12 @@ const AuthenticatedAdminChaptersRoute =
     path: '/chapters',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminCharactersRoute =
+  AuthenticatedAdminCharactersRouteImport.update({
+    id: '/characters',
+    path: '/characters',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminContactsRoute =
   AuthenticatedAdminContactsRouteImport.update({
     id: '/contacts',
@@ -167,10 +180,33 @@ const AuthenticatedAdminGenresRoute =
     path: '/genres',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminLocationsRoute =
+  AuthenticatedAdminLocationsRouteImport.update({
+    id: '/locations',
+    path: '/locations',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminMediaRoute = AuthenticatedAdminMediaRouteImport.update({
+  id: '/media',
+  path: '/media',
+  getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
 const AuthenticatedAdminNewsletterRoute =
   AuthenticatedAdminNewsletterRouteImport.update({
     id: '/newsletter',
     path: '/newsletter',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminPromptsRoute =
+  AuthenticatedAdminPromptsRouteImport.update({
+    id: '/prompts',
+    path: '/prompts',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminScenesRoute =
+  AuthenticatedAdminScenesRouteImport.update({
+    id: '/scenes',
+    path: '/scenes',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
 const AuthenticatedAdminStoriesRoute =
@@ -183,6 +219,16 @@ const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   id: '/users',
   path: '/users',
   getParentRoute: () => AuthenticatedAdminRoute,
+} as any)
+const ApiAdminMediaRoute = ApiAdminMediaRouteImport.update({
+  id: '/api/admin/media',
+  path: '/api/admin/media',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdminMediaAssetIdRoute = ApiAdminMediaAssetIdRouteImport.update({
+  id: '/$assetId',
+  path: '/$assetId',
+  getParentRoute: () => ApiAdminMediaRoute,
 } as any)
 const StorySlugChapterChapterNumberRoute =
   StorySlugChapterChapterNumberRouteImport.update({
@@ -214,11 +260,18 @@ export interface FileRoutesByFullPath {
   '/story/$slug': typeof StorySlugRouteWithChildren
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/chapters': typeof AuthenticatedAdminChaptersRoute
+  '/admin/characters': typeof AuthenticatedAdminCharactersRoute
   '/admin/contacts': typeof AuthenticatedAdminContactsRoute
   '/admin/genres': typeof AuthenticatedAdminGenresRoute
+  '/admin/locations': typeof AuthenticatedAdminLocationsRoute
+  '/admin/media': typeof AuthenticatedAdminMediaRoute
   '/admin/newsletter': typeof AuthenticatedAdminNewsletterRoute
+  '/admin/prompts': typeof AuthenticatedAdminPromptsRoute
+  '/admin/scenes': typeof AuthenticatedAdminScenesRoute
   '/admin/stories': typeof AuthenticatedAdminStoriesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/api/admin/media': typeof ApiAdminMediaRouteWithChildren
+  '/api/admin/media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/story/$slug/chapter/$chapterNumber': typeof StorySlugChapterChapterNumberRoute
 }
 export interface FileRoutesByTo {
@@ -244,11 +297,18 @@ export interface FileRoutesByTo {
   '/story/$slug': typeof StorySlugRouteWithChildren
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/chapters': typeof AuthenticatedAdminChaptersRoute
+  '/admin/characters': typeof AuthenticatedAdminCharactersRoute
   '/admin/contacts': typeof AuthenticatedAdminContactsRoute
   '/admin/genres': typeof AuthenticatedAdminGenresRoute
+  '/admin/locations': typeof AuthenticatedAdminLocationsRoute
+  '/admin/media': typeof AuthenticatedAdminMediaRoute
   '/admin/newsletter': typeof AuthenticatedAdminNewsletterRoute
+  '/admin/prompts': typeof AuthenticatedAdminPromptsRoute
+  '/admin/scenes': typeof AuthenticatedAdminScenesRoute
   '/admin/stories': typeof AuthenticatedAdminStoriesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/api/admin/media': typeof ApiAdminMediaRouteWithChildren
+  '/api/admin/media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/story/$slug/chapter/$chapterNumber': typeof StorySlugChapterChapterNumberRoute
 }
 export interface FileRoutesById {
@@ -276,11 +336,18 @@ export interface FileRoutesById {
   '/story/$slug': typeof StorySlugRouteWithChildren
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/_authenticated/admin/chapters': typeof AuthenticatedAdminChaptersRoute
+  '/_authenticated/admin/characters': typeof AuthenticatedAdminCharactersRoute
   '/_authenticated/admin/contacts': typeof AuthenticatedAdminContactsRoute
   '/_authenticated/admin/genres': typeof AuthenticatedAdminGenresRoute
+  '/_authenticated/admin/locations': typeof AuthenticatedAdminLocationsRoute
+  '/_authenticated/admin/media': typeof AuthenticatedAdminMediaRoute
   '/_authenticated/admin/newsletter': typeof AuthenticatedAdminNewsletterRoute
+  '/_authenticated/admin/prompts': typeof AuthenticatedAdminPromptsRoute
+  '/_authenticated/admin/scenes': typeof AuthenticatedAdminScenesRoute
   '/_authenticated/admin/stories': typeof AuthenticatedAdminStoriesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
+  '/api/admin/media': typeof ApiAdminMediaRouteWithChildren
+  '/api/admin/media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/story/$slug/chapter/$chapterNumber': typeof StorySlugChapterChapterNumberRoute
 }
 export interface FileRouteTypes {
@@ -308,11 +375,18 @@ export interface FileRouteTypes {
     | '/story/$slug'
     | '/admin/analytics'
     | '/admin/chapters'
+    | '/admin/characters'
     | '/admin/contacts'
     | '/admin/genres'
+    | '/admin/locations'
+    | '/admin/media'
     | '/admin/newsletter'
+    | '/admin/prompts'
+    | '/admin/scenes'
     | '/admin/stories'
     | '/admin/users'
+    | '/api/admin/media'
+    | '/api/admin/media/$assetId'
     | '/story/$slug/chapter/$chapterNumber'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -338,11 +412,18 @@ export interface FileRouteTypes {
     | '/story/$slug'
     | '/admin/analytics'
     | '/admin/chapters'
+    | '/admin/characters'
     | '/admin/contacts'
     | '/admin/genres'
+    | '/admin/locations'
+    | '/admin/media'
     | '/admin/newsletter'
+    | '/admin/prompts'
+    | '/admin/scenes'
     | '/admin/stories'
     | '/admin/users'
+    | '/api/admin/media'
+    | '/api/admin/media/$assetId'
     | '/story/$slug/chapter/$chapterNumber'
   id:
     | '__root__'
@@ -369,11 +450,18 @@ export interface FileRouteTypes {
     | '/story/$slug'
     | '/_authenticated/admin/analytics'
     | '/_authenticated/admin/chapters'
+    | '/_authenticated/admin/characters'
     | '/_authenticated/admin/contacts'
     | '/_authenticated/admin/genres'
+    | '/_authenticated/admin/locations'
+    | '/_authenticated/admin/media'
     | '/_authenticated/admin/newsletter'
+    | '/_authenticated/admin/prompts'
+    | '/_authenticated/admin/scenes'
     | '/_authenticated/admin/stories'
     | '/_authenticated/admin/users'
+    | '/api/admin/media'
+    | '/api/admin/media/$assetId'
     | '/story/$slug/chapter/$chapterNumber'
   fileRoutesById: FileRoutesById
 }
@@ -397,6 +485,7 @@ export interface RootRouteChildren {
   ApiContactRoute: typeof ApiContactRoute
   ApiNewsletterRoute: typeof ApiNewsletterRoute
   StorySlugRoute: typeof StorySlugRouteWithChildren
+  ApiAdminMediaRoute: typeof ApiAdminMediaRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -562,6 +651,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminChaptersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/characters': {
+      id: '/_authenticated/admin/characters'
+      path: '/characters'
+      fullPath: '/admin/characters'
+      preLoaderRoute: typeof AuthenticatedAdminCharactersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/contacts': {
       id: '/_authenticated/admin/contacts'
       path: '/contacts'
@@ -576,11 +672,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminGenresRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/locations': {
+      id: '/_authenticated/admin/locations'
+      path: '/locations'
+      fullPath: '/admin/locations'
+      preLoaderRoute: typeof AuthenticatedAdminLocationsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/media': {
+      id: '/_authenticated/admin/media'
+      path: '/media'
+      fullPath: '/admin/media'
+      preLoaderRoute: typeof AuthenticatedAdminMediaRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/newsletter': {
       id: '/_authenticated/admin/newsletter'
       path: '/newsletter'
       fullPath: '/admin/newsletter'
       preLoaderRoute: typeof AuthenticatedAdminNewsletterRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/prompts': {
+      id: '/_authenticated/admin/prompts'
+      path: '/prompts'
+      fullPath: '/admin/prompts'
+      preLoaderRoute: typeof AuthenticatedAdminPromptsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/scenes': {
+      id: '/_authenticated/admin/scenes'
+      path: '/scenes'
+      fullPath: '/admin/scenes'
+      preLoaderRoute: typeof AuthenticatedAdminScenesRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
     '/_authenticated/admin/stories': {
@@ -597,6 +721,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/api/admin/media': {
+      id: '/api/admin/media'
+      path: '/api/admin/media'
+      fullPath: '/api/admin/media'
+      preLoaderRoute: typeof ApiAdminMediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/admin/media/$assetId': {
+      id: '/api/admin/media/$assetId'
+      path: '/$assetId'
+      fullPath: '/api/admin/media/$assetId'
+      preLoaderRoute: typeof ApiAdminMediaAssetIdRouteImport
+      parentRoute: typeof ApiAdminMediaRoute
+    }
     '/story/$slug/chapter/$chapterNumber': {
       id: '/story/$slug/chapter/$chapterNumber'
       path: '/chapter/$chapterNumber'
@@ -610,9 +748,14 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAnalyticsRoute: typeof AuthenticatedAdminAnalyticsRoute
   AuthenticatedAdminChaptersRoute: typeof AuthenticatedAdminChaptersRoute
+  AuthenticatedAdminCharactersRoute: typeof AuthenticatedAdminCharactersRoute
   AuthenticatedAdminContactsRoute: typeof AuthenticatedAdminContactsRoute
   AuthenticatedAdminGenresRoute: typeof AuthenticatedAdminGenresRoute
+  AuthenticatedAdminLocationsRoute: typeof AuthenticatedAdminLocationsRoute
+  AuthenticatedAdminMediaRoute: typeof AuthenticatedAdminMediaRoute
   AuthenticatedAdminNewsletterRoute: typeof AuthenticatedAdminNewsletterRoute
+  AuthenticatedAdminPromptsRoute: typeof AuthenticatedAdminPromptsRoute
+  AuthenticatedAdminScenesRoute: typeof AuthenticatedAdminScenesRoute
   AuthenticatedAdminStoriesRoute: typeof AuthenticatedAdminStoriesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
 }
@@ -620,9 +763,14 @@ interface AuthenticatedAdminRouteChildren {
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAnalyticsRoute: AuthenticatedAdminAnalyticsRoute,
   AuthenticatedAdminChaptersRoute: AuthenticatedAdminChaptersRoute,
+  AuthenticatedAdminCharactersRoute: AuthenticatedAdminCharactersRoute,
   AuthenticatedAdminContactsRoute: AuthenticatedAdminContactsRoute,
   AuthenticatedAdminGenresRoute: AuthenticatedAdminGenresRoute,
+  AuthenticatedAdminLocationsRoute: AuthenticatedAdminLocationsRoute,
+  AuthenticatedAdminMediaRoute: AuthenticatedAdminMediaRoute,
   AuthenticatedAdminNewsletterRoute: AuthenticatedAdminNewsletterRoute,
+  AuthenticatedAdminPromptsRoute: AuthenticatedAdminPromptsRoute,
+  AuthenticatedAdminScenesRoute: AuthenticatedAdminScenesRoute,
   AuthenticatedAdminStoriesRoute: AuthenticatedAdminStoriesRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
 }
@@ -655,6 +803,18 @@ const StorySlugRouteWithChildren = StorySlugRoute._addFileChildren(
   StorySlugRouteChildren,
 )
 
+interface ApiAdminMediaRouteChildren {
+  ApiAdminMediaAssetIdRoute: typeof ApiAdminMediaAssetIdRoute
+}
+
+const ApiAdminMediaRouteChildren: ApiAdminMediaRouteChildren = {
+  ApiAdminMediaAssetIdRoute: ApiAdminMediaAssetIdRoute,
+}
+
+const ApiAdminMediaRouteWithChildren = ApiAdminMediaRoute._addFileChildren(
+  ApiAdminMediaRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
@@ -675,6 +835,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiContactRoute: ApiContactRoute,
   ApiNewsletterRoute: ApiNewsletterRoute,
   StorySlugRoute: StorySlugRouteWithChildren,
+  ApiAdminMediaRoute: ApiAdminMediaRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

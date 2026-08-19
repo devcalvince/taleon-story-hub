@@ -201,6 +201,7 @@ function StoryPage() {
             <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {characters.map((c: any) => (
                 <div key={c.id} className="panel p-5">
+                  {c.image_url && <img src={c.image_url} alt={c.name} className="mb-3 h-20 w-20 rounded-full object-cover" loading="lazy" />}
                   <p className="font-display text-lg">{c.name}</p>
                   <p className="text-xs tracking-widest text-gold uppercase">{c.role}</p>
                   <p className="mt-2 text-sm text-muted-foreground">{c.bio}</p>
@@ -209,6 +210,8 @@ function StoryPage() {
             </div>
           </section>
         )}
+
+        <StoryVisualAssets storyId={story.id} />
 
         <section className="mb-14">
           <h2 className="text-2xl tracking-wide">Chapters</h2>
@@ -299,6 +302,70 @@ function StoryPage() {
           </section>
         )}
       </div>
+    </>
+  );
+}
+
+function StoryVisualAssets({ storyId }: { storyId: string }) {
+  const [assets, setAssets] = useState<any[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from("media_assets")
+      .select("id, title, asset_type, public_url, status")
+      .eq("story_id", storyId)
+      .in("status", ["approved", "published"])
+      .order("asset_type")
+      .then(({ data }) => setAssets(data ?? []));
+  }, [storyId]);
+
+  if (assets.length === 0) return null;
+
+  const covers = assets.filter((a) => ["cover", "story_cover"].includes(a.asset_type));
+  const scenes = assets.filter((a) => a.asset_type === "scene");
+  const others = assets.filter((a) => !["cover", "story_cover", "scene"].includes(a.asset_type));
+
+  return (
+    <>
+      {covers.length > 0 && (
+        <section className="mb-14">
+          <h2 className="text-2xl tracking-wide">Artwork</h2>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {covers.map((a) => (
+              <div key={a.id} className="overflow-hidden rounded-lg border border-border bg-surface-2">
+                <img src={a.public_url} alt={a.title} className="w-full object-cover" loading="lazy" />
+                <div className="p-3"><p className="text-sm font-medium">{a.title}</p></div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      {scenes.length > 0 && (
+        <section className="mb-14">
+          <h2 className="text-2xl tracking-wide">Scenes</h2>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {scenes.map((a) => (
+              <div key={a.id} className="overflow-hidden rounded-lg border border-border bg-surface-2">
+                <img src={a.public_url} alt={a.title} className="w-full object-cover" loading="lazy" />
+                <div className="p-3"><p className="text-sm font-medium">{a.title}</p></div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+      {others.length > 0 && (
+        <section className="mb-14">
+          <h2 className="text-2xl tracking-wide">Gallery</h2>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {others.map((a) => (
+              <div key={a.id} className="overflow-hidden rounded-lg border border-border bg-surface-2">
+                <img src={a.public_url} alt={a.title} className="w-full object-cover" loading="lazy" />
+                <div className="p-2"><p className="text-xs text-muted-foreground">{a.title}</p></div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </>
   );
 }

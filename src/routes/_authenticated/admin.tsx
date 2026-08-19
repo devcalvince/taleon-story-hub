@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { PageHeader, EmptyState } from "@/components/site/Section";
-import { BookOpen, Users, BarChart3, FolderTree, Mail, Newspaper } from "lucide-react";
+import { BookOpen, Users, BarChart3, FolderTree, Mail, Newspaper, Image, Film, MapPin, User, Wand2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
   head: () => ({
@@ -71,10 +71,15 @@ function AdminPage() {
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
           {[
             { label: "Stories", icon: BookOpen, to: "/admin/stories" as const, color: "bg-blue-500/10 text-blue-400" },
+            { label: "Media Studio", icon: Image, to: "/admin/media" as const, color: "bg-purple-500/10 text-purple-400" },
+            { label: "Scenes", icon: Film, to: "/admin/scenes" as const, color: "bg-amber-500/10 text-amber-400" },
+            { label: "Characters", icon: User, to: "/admin/characters" as const, color: "bg-cyan-500/10 text-cyan-400" },
+            { label: "Locations", icon: MapPin, to: "/admin/locations" as const, color: "bg-emerald-500/10 text-emerald-400" },
+            { label: "Prompts", icon: Wand2, to: "/admin/prompts" as const, color: "bg-rose-500/10 text-rose-400" },
             { label: "Analytics", icon: BarChart3, to: "/admin/analytics" as const, color: "bg-green-500/10 text-green-400" },
-            { label: "Genres", icon: FolderTree, to: "/admin/genres" as const, color: "bg-purple-500/10 text-purple-400" },
+            { label: "Genres", icon: FolderTree, to: "/admin/genres" as const, color: "bg-violet-500/10 text-violet-400" },
             { label: "Users", icon: Users, to: "/admin/users" as const, color: "bg-orange-500/10 text-orange-400" },
-            { label: "Contacts", icon: Mail, to: "/admin/contacts" as const, color: "bg-cyan-500/10 text-cyan-400" },
+            { label: "Contacts", icon: Mail, to: "/admin/contacts" as const, color: "bg-teal-500/10 text-teal-400" },
             { label: "Newsletter", icon: Newspaper, to: "/admin/newsletter" as const, color: "bg-pink-500/10 text-pink-400" },
           ].map((item) => (
             <Link

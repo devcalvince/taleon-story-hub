@@ -27,7 +27,16 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as WatchRouteImport } from './routes/watch'
 import { Route as AuthenticatedAccountRouteImport } from './routes/_authenticated/account'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as ApiContactRouteImport } from './routes/api/contact'
+import { Route as ApiNewsletterRouteImport } from './routes/api/newsletter'
 import { Route as StorySlugRouteImport } from './routes/story.$slug'
+import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin/analytics'
+import { Route as AuthenticatedAdminChaptersRouteImport } from './routes/_authenticated/admin/chapters'
+import { Route as AuthenticatedAdminContactsRouteImport } from './routes/_authenticated/admin/contacts'
+import { Route as AuthenticatedAdminGenresRouteImport } from './routes/_authenticated/admin/genres'
+import { Route as AuthenticatedAdminNewsletterRouteImport } from './routes/_authenticated/admin/newsletter'
+import { Route as AuthenticatedAdminStoriesRouteImport } from './routes/_authenticated/admin/stories'
+import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as StorySlugChapterChapterNumberRouteImport } from './routes/story.$slug.chapter.$chapterNumber'
 
 const IndexRoute = IndexRouteImport.update({
@@ -119,10 +128,61 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiContactRoute = ApiContactRouteImport.update({
+  id: '/api/contact',
+  path: '/api/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiNewsletterRoute = ApiNewsletterRouteImport.update({
+  id: '/api/newsletter',
+  path: '/api/newsletter',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StorySlugRoute = StorySlugRouteImport.update({
   id: '/story/$slug',
   path: '/story/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminAnalyticsRoute =
+  AuthenticatedAdminAnalyticsRouteImport.update({
+    id: '/analytics',
+    path: '/analytics',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminChaptersRoute =
+  AuthenticatedAdminChaptersRouteImport.update({
+    id: '/chapters',
+    path: '/chapters',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminContactsRoute =
+  AuthenticatedAdminContactsRouteImport.update({
+    id: '/contacts',
+    path: '/contacts',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminGenresRoute =
+  AuthenticatedAdminGenresRouteImport.update({
+    id: '/genres',
+    path: '/genres',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminNewsletterRoute =
+  AuthenticatedAdminNewsletterRouteImport.update({
+    id: '/newsletter',
+    path: '/newsletter',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminStoriesRoute =
+  AuthenticatedAdminStoriesRouteImport.update({
+    id: '/stories',
+    path: '/stories',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
+const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
+  id: '/users',
+  path: '/users',
+  getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
 const StorySlugChapterChapterNumberRoute =
   StorySlugChapterChapterNumberRouteImport.update({
@@ -148,8 +208,17 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/watch': typeof WatchRoute
   '/account': typeof AuthenticatedAccountRoute
-  '/admin': typeof AuthenticatedAdminRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/api/contact': typeof ApiContactRoute
+  '/api/newsletter': typeof ApiNewsletterRoute
   '/story/$slug': typeof StorySlugRouteWithChildren
+  '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
+  '/admin/chapters': typeof AuthenticatedAdminChaptersRoute
+  '/admin/contacts': typeof AuthenticatedAdminContactsRoute
+  '/admin/genres': typeof AuthenticatedAdminGenresRoute
+  '/admin/newsletter': typeof AuthenticatedAdminNewsletterRoute
+  '/admin/stories': typeof AuthenticatedAdminStoriesRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/story/$slug/chapter/$chapterNumber': typeof StorySlugChapterChapterNumberRoute
 }
 export interface FileRoutesByTo {
@@ -169,8 +238,17 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/watch': typeof WatchRoute
   '/account': typeof AuthenticatedAccountRoute
-  '/admin': typeof AuthenticatedAdminRoute
+  '/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/api/contact': typeof ApiContactRoute
+  '/api/newsletter': typeof ApiNewsletterRoute
   '/story/$slug': typeof StorySlugRouteWithChildren
+  '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
+  '/admin/chapters': typeof AuthenticatedAdminChaptersRoute
+  '/admin/contacts': typeof AuthenticatedAdminContactsRoute
+  '/admin/genres': typeof AuthenticatedAdminGenresRoute
+  '/admin/newsletter': typeof AuthenticatedAdminNewsletterRoute
+  '/admin/stories': typeof AuthenticatedAdminStoriesRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/story/$slug/chapter/$chapterNumber': typeof StorySlugChapterChapterNumberRoute
 }
 export interface FileRoutesById {
@@ -192,8 +270,17 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/watch': typeof WatchRoute
   '/_authenticated/account': typeof AuthenticatedAccountRoute
-  '/_authenticated/admin': typeof AuthenticatedAdminRoute
+  '/_authenticated/admin': typeof AuthenticatedAdminRouteWithChildren
+  '/api/contact': typeof ApiContactRoute
+  '/api/newsletter': typeof ApiNewsletterRoute
   '/story/$slug': typeof StorySlugRouteWithChildren
+  '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
+  '/_authenticated/admin/chapters': typeof AuthenticatedAdminChaptersRoute
+  '/_authenticated/admin/contacts': typeof AuthenticatedAdminContactsRoute
+  '/_authenticated/admin/genres': typeof AuthenticatedAdminGenresRoute
+  '/_authenticated/admin/newsletter': typeof AuthenticatedAdminNewsletterRoute
+  '/_authenticated/admin/stories': typeof AuthenticatedAdminStoriesRoute
+  '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/story/$slug/chapter/$chapterNumber': typeof StorySlugChapterChapterNumberRoute
 }
 export interface FileRouteTypes {
@@ -216,7 +303,16 @@ export interface FileRouteTypes {
     | '/watch'
     | '/account'
     | '/admin'
+    | '/api/contact'
+    | '/api/newsletter'
     | '/story/$slug'
+    | '/admin/analytics'
+    | '/admin/chapters'
+    | '/admin/contacts'
+    | '/admin/genres'
+    | '/admin/newsletter'
+    | '/admin/stories'
+    | '/admin/users'
     | '/story/$slug/chapter/$chapterNumber'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -237,7 +333,16 @@ export interface FileRouteTypes {
     | '/watch'
     | '/account'
     | '/admin'
+    | '/api/contact'
+    | '/api/newsletter'
     | '/story/$slug'
+    | '/admin/analytics'
+    | '/admin/chapters'
+    | '/admin/contacts'
+    | '/admin/genres'
+    | '/admin/newsletter'
+    | '/admin/stories'
+    | '/admin/users'
     | '/story/$slug/chapter/$chapterNumber'
   id:
     | '__root__'
@@ -259,7 +364,16 @@ export interface FileRouteTypes {
     | '/watch'
     | '/_authenticated/account'
     | '/_authenticated/admin'
+    | '/api/contact'
+    | '/api/newsletter'
     | '/story/$slug'
+    | '/_authenticated/admin/analytics'
+    | '/_authenticated/admin/chapters'
+    | '/_authenticated/admin/contacts'
+    | '/_authenticated/admin/genres'
+    | '/_authenticated/admin/newsletter'
+    | '/_authenticated/admin/stories'
+    | '/_authenticated/admin/users'
     | '/story/$slug/chapter/$chapterNumber'
   fileRoutesById: FileRoutesById
 }
@@ -280,6 +394,8 @@ export interface RootRouteChildren {
   StoriesRoute: typeof StoriesRoute
   TermsRoute: typeof TermsRoute
   WatchRoute: typeof WatchRoute
+  ApiContactRoute: typeof ApiContactRoute
+  ApiNewsletterRoute: typeof ApiNewsletterRoute
   StorySlugRoute: typeof StorySlugRouteWithChildren
 }
 
@@ -411,12 +527,75 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/contact': {
+      id: '/api/contact'
+      path: '/api/contact'
+      fullPath: '/api/contact'
+      preLoaderRoute: typeof ApiContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/newsletter': {
+      id: '/api/newsletter'
+      path: '/api/newsletter'
+      fullPath: '/api/newsletter'
+      preLoaderRoute: typeof ApiNewsletterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/story/$slug': {
       id: '/story/$slug'
       path: '/story/$slug'
       fullPath: '/story/$slug'
       preLoaderRoute: typeof StorySlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/admin/analytics': {
+      id: '/_authenticated/admin/analytics'
+      path: '/analytics'
+      fullPath: '/admin/analytics'
+      preLoaderRoute: typeof AuthenticatedAdminAnalyticsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/chapters': {
+      id: '/_authenticated/admin/chapters'
+      path: '/chapters'
+      fullPath: '/admin/chapters'
+      preLoaderRoute: typeof AuthenticatedAdminChaptersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/contacts': {
+      id: '/_authenticated/admin/contacts'
+      path: '/contacts'
+      fullPath: '/admin/contacts'
+      preLoaderRoute: typeof AuthenticatedAdminContactsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/genres': {
+      id: '/_authenticated/admin/genres'
+      path: '/genres'
+      fullPath: '/admin/genres'
+      preLoaderRoute: typeof AuthenticatedAdminGenresRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/newsletter': {
+      id: '/_authenticated/admin/newsletter'
+      path: '/newsletter'
+      fullPath: '/admin/newsletter'
+      preLoaderRoute: typeof AuthenticatedAdminNewsletterRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/stories': {
+      id: '/_authenticated/admin/stories'
+      path: '/stories'
+      fullPath: '/admin/stories'
+      preLoaderRoute: typeof AuthenticatedAdminStoriesRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/admin/users': {
+      id: '/_authenticated/admin/users'
+      path: '/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
     }
     '/story/$slug/chapter/$chapterNumber': {
       id: '/story/$slug/chapter/$chapterNumber'
@@ -428,14 +607,37 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedAdminRouteChildren {
+  AuthenticatedAdminAnalyticsRoute: typeof AuthenticatedAdminAnalyticsRoute
+  AuthenticatedAdminChaptersRoute: typeof AuthenticatedAdminChaptersRoute
+  AuthenticatedAdminContactsRoute: typeof AuthenticatedAdminContactsRoute
+  AuthenticatedAdminGenresRoute: typeof AuthenticatedAdminGenresRoute
+  AuthenticatedAdminNewsletterRoute: typeof AuthenticatedAdminNewsletterRoute
+  AuthenticatedAdminStoriesRoute: typeof AuthenticatedAdminStoriesRoute
+  AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+}
+
+const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
+  AuthenticatedAdminAnalyticsRoute: AuthenticatedAdminAnalyticsRoute,
+  AuthenticatedAdminChaptersRoute: AuthenticatedAdminChaptersRoute,
+  AuthenticatedAdminContactsRoute: AuthenticatedAdminContactsRoute,
+  AuthenticatedAdminGenresRoute: AuthenticatedAdminGenresRoute,
+  AuthenticatedAdminNewsletterRoute: AuthenticatedAdminNewsletterRoute,
+  AuthenticatedAdminStoriesRoute: AuthenticatedAdminStoriesRoute,
+  AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+}
+
+const AuthenticatedAdminRouteWithChildren =
+  AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
+
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAccountRoute: typeof AuthenticatedAccountRoute
-  AuthenticatedAdminRoute: typeof AuthenticatedAdminRoute
+  AuthenticatedAdminRoute: typeof AuthenticatedAdminRouteWithChildren
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAccountRoute: AuthenticatedAccountRoute,
-  AuthenticatedAdminRoute: AuthenticatedAdminRoute,
+  AuthenticatedAdminRoute: AuthenticatedAdminRouteWithChildren,
 }
 
 const AuthenticatedRouteRouteWithChildren =
@@ -470,6 +672,8 @@ const rootRouteChildren: RootRouteChildren = {
   StoriesRoute: StoriesRoute,
   TermsRoute: TermsRoute,
   WatchRoute: WatchRoute,
+  ApiContactRoute: ApiContactRoute,
+  ApiNewsletterRoute: ApiNewsletterRoute,
   StorySlugRoute: StorySlugRouteWithChildren,
 }
 export const routeTree = rootRouteImport

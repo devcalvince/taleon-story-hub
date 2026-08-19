@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
-import { supabaseAdmin } from "@/lib/supabase-admin";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 const subscribeSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -15,7 +15,7 @@ export const Route = createFileRoute("/api/newsletter")({
           const validated = subscribeSchema.parse(body);
 
           // Upsert: if already subscribed, reactivate
-          const { error } = await supabaseAdmin
+          const { error } = await getSupabaseAdmin()
             .from("newsletter_subscribers")
             .upsert(
               {
@@ -57,7 +57,7 @@ export const Route = createFileRoute("/api/newsletter")({
             );
           }
 
-          const { error } = await supabaseAdmin
+          const { error } = await getSupabaseAdmin()
             .from("newsletter_subscribers")
             .update({ is_active: false, unsubscribed_at: new Date().toISOString() })
             .eq("email", email);

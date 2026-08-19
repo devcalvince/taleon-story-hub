@@ -21,7 +21,7 @@ export const Route = createFileRoute("/_authenticated/account")({
   component: AccountPage,
 });
 
-type Row = { id: string; stories: any };
+type Row = { story_id: string; stories: any };
 
 function AccountPage() {
   const { user } = useSession();
@@ -36,12 +36,12 @@ function AccountPage() {
 
   useEffect(() => {
     if (!user) return;
-    const select = "id, stories:story_id (id, slug, title, tagline, cover_url)";
+    const select = "story_id, stories:story_id (id, slug, title, tagline, cover_url)";
     supabase.from("bookmarks").select(select).eq("user_id", user.id).then(({ data }) => setBookmarks((data as any) ?? []));
     supabase.from("follows").select(select).eq("user_id", user.id).then(({ data }) => setFollows((data as any) ?? []));
     supabase
       .from("reading_progress")
-      .select("id, progress_percent, chapter_number, updated_at, stories:story_id (id, slug, title, cover_url)")
+      .select("story_id, percent, chapter_number, updated_at, stories:story_id (id, slug, title, cover_url)")
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false })
       .then(({ data }) => setProgress((data as any) ?? []));
@@ -106,7 +106,7 @@ function AccountPage() {
             ) : (
               <ul className="space-y-3">
                 {progress.map((p) => (
-                  <li key={p.id}>
+                  <li key={p.story_id}>
                     <Link
                       to="/story/$slug/chapter/$chapterNumber"
                       params={{ slug: p.stories?.slug ?? "", chapterNumber: String(p.chapter_number ?? 1) }}
@@ -120,12 +120,12 @@ function AccountPage() {
                       <div className="min-w-0 flex-1">
                         <p className="truncate font-display">{p.stories?.title}</p>
                         <p className="text-xs text-muted-foreground">
-                          Chapter {p.chapter_number} • {Math.round(p.progress_percent ?? 0)}% read
+                          Chapter {p.chapter_number} • {Math.round(p.percent ?? 0)}% read
                         </p>
                         <div className="mt-2 h-1 w-full rounded bg-border">
                           <div
                             className="h-1 rounded bg-gold"
-                            style={{ width: `${Math.min(100, p.progress_percent ?? 0)}%` }}
+                            style={{ width: `${Math.min(100, p.percent ?? 0)}%` }}
                           />
                         </div>
                       </div>
@@ -153,7 +153,7 @@ function AccountPage() {
                 <div className="grid grid-cols-2 gap-5 sm:grid-cols-3 lg:grid-cols-5">
                   {rows.map((r) => (
                     <Link
-                      key={r.id}
+                      key={r.story_id}
                       to="/story/$slug"
                       params={{ slug: r.stories?.slug ?? "" }}
                       className="group block"

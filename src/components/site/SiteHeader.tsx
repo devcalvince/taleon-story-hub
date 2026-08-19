@@ -3,7 +3,6 @@ import { useState } from "react";
 import { Menu, Search, X } from "lucide-react";
 import { useSession } from "@/hooks/useSession";
 import { supabase } from "@/integrations/supabase/client";
-import wordmark from "@/assets/primary_logo.png.asset.json";
 
 const NAV = [
   { to: "/stories", label: "Stories" },
@@ -28,8 +27,8 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6">
-        <Link to="/" className="flex shrink-0 items-center" aria-label="Taleon Media home">
-          <img src={wordmark.url} alt="Taleon Media" className="h-5 w-auto sm:h-6" width={320} height={64} />
+        <Link to="/" className="flex shrink-0 items-center gap-2" aria-label="Taleon Media home">
+          <span className="font-display text-lg tracking-widest text-gold sm:text-xl">TALEON</span>
         </Link>
 
         <nav className="ml-4 hidden items-center gap-7 md:flex" aria-label="Primary">

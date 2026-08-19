@@ -1,5 +1,4 @@
 import { Link } from "@tanstack/react-router";
-import logo from "@/assets/full_logo.png.asset.json";
 
 const SOCIALS = [
   { label: "TikTok", href: "https://www.tiktok.com/@taleonmedia" },
@@ -14,7 +13,7 @@ export function SiteFooter() {
     <footer className="mt-24 border-t border-border bg-surface-2/40">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 py-14 sm:px-6 md:grid-cols-[1.4fr_1fr_1fr]">
         <div>
-          <img src={logo.url} alt="Taleon Media — stories that come alive" className="h-16 w-auto" loading="lazy" width={920} height={478} />
+          <span className="font-display text-2xl tracking-widest text-gold">TALEON</span>
           <p className="mt-4 max-w-sm text-sm text-muted-foreground">
             An original storytelling and entertainment company. Read, listen and watch original worlds.
           </p>

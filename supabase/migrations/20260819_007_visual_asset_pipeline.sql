@@ -1,31 +1,44 @@
 -- ============================================================
 -- TALEON VISUAL ASSET PIPELINE — Migration 4
 -- Scenes, Locations, Media Assets, Generation Jobs
+-- Idempotent: safe to re-run
 -- ============================================================
 
--- Enums
-CREATE TYPE public.asset_type AS ENUM (
-  'cover','scene','character','location','thumbnail','banner',
-  'poster','social_vertical','social_square','youtube_thumbnail',
-  'story_cinematic','story_cover','other'
-);
+-- Enums (use DO blocks since CREATE TYPE has no IF NOT EXISTS)
+DO $$ BEGIN
+  CREATE TYPE public.asset_type AS ENUM (
+    'cover','scene','character','location','thumbnail','banner',
+    'poster','social_vertical','social_square','youtube_thumbnail',
+    'story_cinematic','story_cover','other'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE public.source_type AS ENUM (
-  'upload','external_url','ai_generated','imported'
-);
+DO $$ BEGIN
+  CREATE TYPE public.source_type AS ENUM (
+    'upload','external_url','ai_generated','imported'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE public.asset_status AS ENUM (
-  'draft','processing','ready','approved','published','rejected','failed','archived'
-);
+DO $$ BEGIN
+  CREATE TYPE public.asset_status AS ENUM (
+    'draft','processing','ready','approved','published','rejected','failed','archived'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
-CREATE TYPE public.generation_job_status AS ENUM (
-  'queued','generating','processing','uploading','completed','failed','cancelled'
-);
+DO $$ BEGIN
+  CREATE TYPE public.generation_job_status AS ENUM (
+    'queued','generating','processing','uploading','completed','failed','cancelled'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 -- ============================================================
 -- SCENES
 -- ============================================================
-CREATE TABLE public.scenes (
+CREATE TABLE IF NOT EXISTS public.scenes (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   chapter_id uuid NOT NULL REFERENCES public.chapters(id) ON DELETE CASCADE,
   scene_number int NOT NULL,
@@ -46,18 +59,27 @@ GRANT SELECT ON public.scenes TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.scenes TO authenticated;
 GRANT ALL ON public.scenes TO service_role;
 ALTER TABLE public.scenes ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "scenes_public_read" ON public.scenes FOR SELECT USING (true);
-CREATE POLICY "scenes_admin_write" ON public.scenes FOR ALL TO authenticated
-  USING (public.has_role(auth.uid(),'admin'))
-  WITH CHECK (public.has_role(auth.uid(),'admin'));
-CREATE TRIGGER scenes_updated BEFORE UPDATE ON public.scenes
-  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
-CREATE INDEX idx_scenes_chapter ON public.scenes(chapter_id, scene_number);
+DO $$ BEGIN
+  CREATE POLICY "scenes_public_read" ON public.scenes FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "scenes_admin_write" ON public.scenes FOR ALL TO authenticated
+    USING (public.has_role(auth.uid(),'admin'))
+    WITH CHECK (public.has_role(auth.uid(),'admin'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE TRIGGER scenes_updated BEFORE UPDATE ON public.scenes
+    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+CREATE INDEX IF NOT EXISTS idx_scenes_chapter ON public.scenes(chapter_id, scene_number);
 
 -- ============================================================
 -- LOCATIONS
 -- ============================================================
-CREATE TABLE public.locations (
+CREATE TABLE IF NOT EXISTS public.locations (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   story_id uuid NOT NULL REFERENCES public.stories(id) ON DELETE CASCADE,
   name text NOT NULL,
@@ -72,13 +94,22 @@ GRANT SELECT ON public.locations TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.locations TO authenticated;
 GRANT ALL ON public.locations TO service_role;
 ALTER TABLE public.locations ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "locations_public_read" ON public.locations FOR SELECT USING (true);
-CREATE POLICY "locations_admin_write" ON public.locations FOR ALL TO authenticated
-  USING (public.has_role(auth.uid(),'admin'))
-  WITH CHECK (public.has_role(auth.uid(),'admin'));
-CREATE TRIGGER locations_updated BEFORE UPDATE ON public.locations
-  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
-CREATE INDEX idx_locations_story ON public.locations(story_id);
+DO $$ BEGIN
+  CREATE POLICY "locations_public_read" ON public.locations FOR SELECT USING (true);
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "locations_admin_write" ON public.locations FOR ALL TO authenticated
+    USING (public.has_role(auth.uid(),'admin'))
+    WITH CHECK (public.has_role(auth.uid(),'admin'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE TRIGGER locations_updated BEFORE UPDATE ON public.locations
+    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+CREATE INDEX IF NOT EXISTS idx_locations_story ON public.locations(story_id);
 
 -- ============================================================
 -- Extend CHARACTERS with visual bible fields
@@ -94,7 +125,7 @@ ALTER TABLE public.characters ADD COLUMN IF NOT EXISTS notes text;
 -- ============================================================
 -- MEDIA ASSETS
 -- ============================================================
-CREATE TABLE public.media_assets (
+CREATE TABLE IF NOT EXISTS public.media_assets (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   story_id uuid REFERENCES public.stories(id) ON DELETE SET NULL,
   chapter_id uuid REFERENCES public.chapters(id) ON DELETE SET NULL,
@@ -131,25 +162,37 @@ GRANT SELECT ON public.media_assets TO anon;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.media_assets TO authenticated;
 GRANT ALL ON public.media_assets TO service_role;
 ALTER TABLE public.media_assets ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "media_assets_public_read" ON public.media_assets FOR SELECT
-  USING (status IN ('approved','published'));
-CREATE POLICY "media_assets_admin_read" ON public.media_assets FOR SELECT TO authenticated
-  USING (public.has_role(auth.uid(),'admin'));
-CREATE POLICY "media_assets_admin_write" ON public.media_assets FOR ALL TO authenticated
-  USING (public.has_role(auth.uid(),'admin'))
-  WITH CHECK (public.has_role(auth.uid(),'admin'));
-CREATE TRIGGER media_assets_updated BEFORE UPDATE ON public.media_assets
-  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
-CREATE INDEX idx_media_assets_story ON public.media_assets(story_id);
-CREATE INDEX idx_media_assets_chapter ON public.media_assets(chapter_id);
-CREATE INDEX idx_media_assets_scene ON public.media_assets(scene_id);
-CREATE INDEX idx_media_assets_status ON public.media_assets(status);
-CREATE INDEX idx_media_assets_type ON public.media_assets(asset_type);
+DO $$ BEGIN
+  CREATE POLICY "media_assets_public_read" ON public.media_assets FOR SELECT
+    USING (status IN ('approved','published'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "media_assets_admin_read" ON public.media_assets FOR SELECT TO authenticated
+    USING (public.has_role(auth.uid(),'admin'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "media_assets_admin_write" ON public.media_assets FOR ALL TO authenticated
+    USING (public.has_role(auth.uid(),'admin'))
+    WITH CHECK (public.has_role(auth.uid(),'admin'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE TRIGGER media_assets_updated BEFORE UPDATE ON public.media_assets
+    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+CREATE INDEX IF NOT EXISTS idx_media_assets_story ON public.media_assets(story_id);
+CREATE INDEX IF NOT EXISTS idx_media_assets_chapter ON public.media_assets(chapter_id);
+CREATE INDEX IF NOT EXISTS idx_media_assets_scene ON public.media_assets(scene_id);
+CREATE INDEX IF NOT EXISTS idx_media_assets_status ON public.media_assets(status);
+CREATE INDEX IF NOT EXISTS idx_media_assets_type ON public.media_assets(asset_type);
 
 -- ============================================================
 -- GENERATION JOBS
 -- ============================================================
-CREATE TABLE public.generation_jobs (
+CREATE TABLE IF NOT EXISTS public.generation_jobs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   media_asset_id uuid REFERENCES public.media_assets(id) ON DELETE SET NULL,
   story_id uuid REFERENCES public.stories(id) ON DELETE SET NULL,
@@ -174,20 +217,29 @@ CREATE TABLE public.generation_jobs (
 GRANT SELECT ON public.generation_jobs TO authenticated;
 GRANT ALL ON public.generation_jobs TO service_role;
 ALTER TABLE public.generation_jobs ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "generation_jobs_admin_read" ON public.generation_jobs FOR SELECT TO authenticated
-  USING (public.has_role(auth.uid(),'admin'));
-CREATE POLICY "generation_jobs_admin_write" ON public.generation_jobs FOR ALL TO authenticated
-  USING (public.has_role(auth.uid(),'admin'))
-  WITH CHECK (public.has_role(auth.uid(),'admin'));
-CREATE TRIGGER generation_jobs_updated BEFORE UPDATE ON public.generation_jobs
-  FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
-CREATE INDEX idx_generation_jobs_status ON public.generation_jobs(status);
-CREATE INDEX idx_generation_jobs_story ON public.generation_jobs(story_id);
+DO $$ BEGIN
+  CREATE POLICY "generation_jobs_admin_read" ON public.generation_jobs FOR SELECT TO authenticated
+    USING (public.has_role(auth.uid(),'admin'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE POLICY "generation_jobs_admin_write" ON public.generation_jobs FOR ALL TO authenticated
+    USING (public.has_role(auth.uid(),'admin'))
+    WITH CHECK (public.has_role(auth.uid(),'admin'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+  CREATE TRIGGER generation_jobs_updated BEFORE UPDATE ON public.generation_jobs
+    FOR EACH ROW EXECUTE FUNCTION public.set_updated_at();
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+CREATE INDEX IF NOT EXISTS idx_generation_jobs_status ON public.generation_jobs(status);
+CREATE INDEX IF NOT EXISTS idx_generation_jobs_story ON public.generation_jobs(story_id);
 
 -- ============================================================
 -- PRODUCTION QUOTAS (admin config stored in DB)
 -- ============================================================
-CREATE TABLE public.production_config (
+CREATE TABLE IF NOT EXISTS public.production_config (
   key text PRIMARY KEY,
   value jsonb NOT NULL,
   updated_at timestamptz NOT NULL DEFAULT now()
@@ -195,9 +247,12 @@ CREATE TABLE public.production_config (
 GRANT SELECT ON public.production_config TO authenticated;
 GRANT ALL ON public.production_config TO service_role;
 ALTER TABLE public.production_config ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "production_config_admin" ON public.production_config FOR ALL TO authenticated
-  USING (public.has_role(auth.uid(),'admin'))
-  WITH CHECK (public.has_role(auth.uid(),'admin'));
+DO $$ BEGIN
+  CREATE POLICY "production_config_admin" ON public.production_config FOR ALL TO authenticated
+    USING (public.has_role(auth.uid(),'admin'))
+    WITH CHECK (public.has_role(auth.uid(),'admin'));
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 INSERT INTO public.production_config (key, value) VALUES
   ('max_generations_per_day', '{"value": 50}'::jsonb),

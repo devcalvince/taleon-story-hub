@@ -25,12 +25,15 @@ function AdminAnalyticsPage() {
   const stats = data?.stats ?? {
     totalViews: 0, totalReads: 0, totalFollows: 0, totalSignups: 0,
     totalChapterReads: 0, totalAudioPlays: 0, totalVideoPlays: 0,
-    totalSearches: 0, totalShares: 0,
+    totalSearches: 0, totalShares: 0, totalVisitors: 0,
+    totalStoryViews: 0, totalChapterStarts: 0,
   };
   const dailyVisitors = data?.dailyVisitors ?? [];
   const topStories = data?.topStories ?? [];
   const recentEvents = data?.recentEvents ?? [];
   const eventBreakdown = data?.eventBreakdown ?? [];
+  const funnelCounts = data?.funnelCounts ?? { started: 0, reached25: 0, reached50: 0, reached75: 0, completed: 0 };
+  const attributionData = data?.attributionData ?? [];
 
   if (loading) return <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">Loading…</div>;
   if (!isAdmin) {
@@ -68,8 +71,10 @@ function AdminAnalyticsPage() {
             {/* Stat Cards */}
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
               {[
-                { label: "Page Views", value: stats.totalViews, icon: Eye, color: "text-blue-400" },
-                { label: "Chapter Reads", value: stats.totalChapterReads, icon: BookOpen, color: "text-green-400" },
+                { label: "Visitors", value: stats.totalVisitors, icon: Users, color: "text-blue-400" },
+                { label: "Story Views", value: stats.totalStoryViews, icon: Eye, color: "text-indigo-400" },
+                { label: "Chapter Starts", value: stats.totalChapterStarts, icon: BookOpen, color: "text-green-400" },
+                { label: "Chapter Completes", value: stats.totalChapterReads, icon: BookOpen, color: "text-emerald-400" },
                 { label: "Follows", value: stats.totalFollows, icon: UserPlus, color: "text-purple-400" },
                 { label: "Signups", value: stats.totalSignups, icon: Users, color: "text-yellow-400" },
                 { label: "Audio Plays", value: stats.totalAudioPlays, icon: Headphones, color: "text-pink-400" },
@@ -89,7 +94,7 @@ function AdminAnalyticsPage() {
 
             {/* Charts Row */}
             <div className="grid gap-6 lg:grid-cols-2">
-              {/* Daily Visitors */}
+              {/* Daily Events */}
               <div className="rounded-lg border border-border bg-surface-2 p-6">
                 <h3 className="mb-4 text-lg font-medium">Daily Events (14 days)</h3>
                 <ResponsiveContainer width="100%" height={250}>
@@ -115,7 +120,7 @@ function AdminAnalyticsPage() {
                       outerRadius={90}
                       paddingAngle={3}
                       dataKey="value"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      label={({ name, percent }) => `${name} ${(percent != null ? percent * 100 : 0).toFixed(0)}%`}
                     >
                       {eventBreakdown.map((_, i) => (
                         <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -125,6 +130,74 @@ function AdminAnalyticsPage() {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
+            </div>
+
+            {/* Chapter Funnel */}
+            <div className="rounded-lg border border-border bg-surface-2 p-6">
+              <h3 className="mb-4 text-lg font-medium">Chapter Completion Funnel</h3>
+              <div className="grid grid-cols-2 gap-6 sm:grid-cols-5 text-center">
+                <div>
+                  <p className="text-2xl font-display text-gold">{funnelCounts.started.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">Started</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-display text-gold">{funnelCounts.reached25.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">25% Read</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-display text-gold">{funnelCounts.reached50.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">50% Read</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-display text-gold">{funnelCounts.reached75.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">75% Read</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-display text-gold">{funnelCounts.completed.toLocaleString()}</p>
+                  <p className="text-xs text-muted-foreground">Completed</p>
+                </div>
+              </div>
+              {funnelCounts.started > 0 && (
+                <div className="mt-4 h-2 rounded-full bg-surface overflow-hidden">
+                  <div
+                    className="h-full bg-gold transition-all"
+                    style={{ width: `${Math.round((funnelCounts.completed / funnelCounts.started) * 100)}%` }}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Attribution Breakdown */}
+            <div className="rounded-lg border border-border bg-surface-2 p-6">
+              <h3 className="mb-4 text-lg font-medium">Acquisition by Source</h3>
+              {attributionData.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No acquisition data yet</p>
+              ) : (
+                <table className="w-full text-left text-sm">
+                  <thead className="text-xs text-muted-foreground uppercase">
+                    <tr>
+                      <th className="pb-2">Source</th>
+                      <th className="pb-2">Visitors</th>
+                      <th className="pb-2">Chapter Starts</th>
+                      <th className="pb-2">Completions</th>
+                      <th className="pb-2">Completion Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border">
+                    {attributionData.map((a) => (
+                      <tr key={a.source}>
+                        <td className="py-2">{a.source}</td>
+                        <td className="py-2 text-muted-foreground">{a.visits.toLocaleString()}</td>
+                        <td className="py-2 text-muted-foreground">{a.starts.toLocaleString()}</td>
+                        <td className="py-2 text-muted-foreground">{a.completions.toLocaleString()}</td>
+                        <td className="py-2">
+                          {a.visits > 0 ? `${Math.round((a.completions / a.visits) * 100)}%` : "—"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
 
             {/* Top Stories */}
@@ -138,14 +211,14 @@ function AdminAnalyticsPage() {
                     <XAxis dataKey="title" tick={{ fontSize: 11 }} />
                     <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip />
-                    <Bar dataKey="views" fill="#7C3AED" name="Views" />
+                    <Bar dataKey="starts" fill="#7C3AED" name="Chapter Starts" />
                     <Bar dataKey="reads" fill="#F4C95D" name="Completed" />
                   </BarChart>
                 </ResponsiveContainer>
               )}
             </div>
 
-            {/* Top Stories Table */}
+            {/* Story Performance Table */}
             <div className="rounded-lg border border-border bg-surface-2 p-6">
               <h3 className="mb-4 text-lg font-medium">Story Performance</h3>
               <div className="overflow-x-auto">
@@ -154,7 +227,8 @@ function AdminAnalyticsPage() {
                     <tr>
                       <th className="pb-3">Story</th>
                       <th className="pb-3">Views</th>
-                      <th className="pb-3">Completed</th>
+                      <th className="pb-3">Starts</th>
+                      <th className="pb-3">Completions</th>
                       <th className="pb-3">Completion Rate</th>
                     </tr>
                   </thead>
@@ -167,6 +241,7 @@ function AdminAnalyticsPage() {
                           </Link>
                         </td>
                         <td className="py-2 text-muted-foreground">{s.views}</td>
+                        <td className="py-2 text-muted-foreground">{s.starts}</td>
                         <td className="py-2 text-muted-foreground">{s.reads}</td>
                         <td className="py-2">
                           <span className={s.completionRate > 50 ? "text-green-400" : s.completionRate > 20 ? "text-yellow-400" : "text-red-400"}>
@@ -191,7 +266,7 @@ function AdminAnalyticsPage() {
                     <div key={e.id} className="flex items-center justify-between border-b border-border py-2 text-sm last:border-0">
                       <Badge variant={
                         e.event_name.includes("view") ? "default" :
-                        e.event_name.includes("read") || e.event_name.includes("completed") ? "secondary" :
+                        e.event_name.includes("complete") || e.event_name.includes("reads") ? "secondary" :
                         e.event_name.includes("follow") ? "outline" :
                         "default"
                       }>

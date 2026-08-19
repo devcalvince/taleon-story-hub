@@ -11,7 +11,7 @@ function isPrivateIp(hostname: string): boolean {
   return false;
 }
 
-export interface ImportResult {
+export type ImportResult = {
   ok: true;
   data: ArrayBuffer;
   contentType: string;

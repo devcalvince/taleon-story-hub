@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const navigate = useNavigate();
@@ -14,15 +13,15 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
 
   async function google() {
     setError("");
-    const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin,
+    const { error: err } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: window.location.origin,
+      },
     });
-    if (result.error) {
-      setError("Google sign-in failed. Please try again.");
-      return;
+    if (err) {
+      setError("Google sign-in failed. " + err.message);
     }
-    if (result.redirected) return;
-    navigate({ to: "/account" });
   }
 
   async function submit(e: React.FormEvent) {

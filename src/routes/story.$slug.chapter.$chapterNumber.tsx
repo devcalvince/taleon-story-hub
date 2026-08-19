@@ -12,8 +12,8 @@ export const Route = createFileRoute("/story/$slug/chapter/$chapterNumber")({
     const data = await fetchChapter({
       data: { slug: params.slug, chapterNumber: Number(params.chapterNumber) },
     });
-    if (!data) throw notFound();
-    return data;
+    if (!data || !data.chapter) throw notFound();
+    return { ...data, chapter: data.chapter! };
   },
   head: ({ params, loaderData }) => {
     if (!loaderData) {

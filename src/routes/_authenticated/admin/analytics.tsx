@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSession } from "@/hooks/useSession";
 import { useAdminAnalytics } from "@/hooks/use-admin-data";
-import { useRealtimeAdmin } from "@/hooks/useRealtimeAdmin";
 import { PageHeader, EmptyState } from "@/components/site/Section";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
@@ -21,9 +20,7 @@ const COLORS = ["#7C3AED", "#F4C95D", "#10B981", "#3B82F6", "#EF4444", "#F59E0B"
 
 function AdminAnalyticsPage() {
   const { isAdmin, loading } = useSession();
-  const { data, isLoading: loadingData } = useAdminAnalytics();
-
-  useRealtimeAdmin(["analytics_events"]);
+  const { data, isLoading: loadingData, isError: loadingError } = useAdminAnalytics();
 
   const stats = data?.stats ?? {
     totalViews: 0, totalReads: 0, totalFollows: 0, totalSignups: 0,
@@ -40,7 +37,21 @@ function AdminAnalyticsPage() {
     return (
       <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
         <EmptyState title="Admins only" body="This area is restricted to Taleon administrators.">
-          <Link to="/account" className="rounded-md border border-border px-5 py-2.5 text-sm">Back to my library</Link>
+          <Link to="/account" className="rounded-md border border-border px-5 py-2.5 text-sm">
+            Back to my library
+          </Link>
+        </EmptyState>
+      </div>
+    );
+  }
+
+  if (loadingError) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
+        <EmptyState title="Unable to load analytics" body="The analytics service could not be reached. Try refreshing, or check your Supabase connection and Realtime publication settings.">
+          <button onClick={() => window.location.reload()} className="rounded-md border border-border px-5 py-2.5 text-sm">
+            Try again
+          </button>
         </EmptyState>
       </div>
     );

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -18,13 +18,14 @@ const TABLE_INVALIDATION_MAP: Record<Table, string[][]> = {
 
 export function useRealtimeAdmin(tables: Table[]) {
   const qc = useQueryClient();
+  const id = useRef(`admin-realtime-${Math.random().toString(36).slice(2, 11)}`).current;
 
   useEffect(() => {
     const channels = tables.map((table) => {
       const queryKeys = TABLE_INVALIDATION_MAP[table] ?? [];
 
       const channel = supabase
-        .channel(`admin-${table}`)
+        .channel(`${id}-${table}`)
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table },
@@ -41,7 +42,9 @@ export function useRealtimeAdmin(tables: Table[]) {
 
     return () => {
       for (const ch of channels) {
-        supabase.removeChannel(ch);
+        try {
+          supabase.removeChannel(ch);
+        } catch {}
       }
     };
   }, [qc, tables.join(",")]);

@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSession } from "@/hooks/useSession";
 import { useAdminCounts, useAdminRecentStories } from "@/hooks/use-admin-data";
+import { useRealtimeAdmin } from "@/hooks/useRealtimeAdmin";
 import { PageHeader, EmptyState } from "@/components/site/Section";
 import { BookOpen, Users, BarChart3, FolderTree, Mail, Newspaper, Image, Film, MapPin, User, Wand2 } from "lucide-react";
 
@@ -23,6 +24,8 @@ function AdminPage() {
   const { isAdmin, loading } = useSession();
   const countsQuery = useAdminCounts();
   const recentStoriesQuery = useAdminRecentStories();
+
+  useRealtimeAdmin(["stories", "chapters", "profiles", "analytics_events"]);
 
   const counts = countsQuery.data ?? { stories: 0, chapters: 0, users: 0, genres: 0 };
   const stories = recentStoriesQuery.data ?? [];

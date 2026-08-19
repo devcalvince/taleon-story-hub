@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSession } from "@/hooks/useSession";
 import { useAdminAnalytics } from "@/hooks/use-admin-data";
+import { useRealtimeAdmin } from "@/hooks/useRealtimeAdmin";
 import { PageHeader, EmptyState } from "@/components/site/Section";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
@@ -21,6 +22,8 @@ const COLORS = ["#7C3AED", "#F4C95D", "#10B981", "#3B82F6", "#EF4444", "#F59E0B"
 function AdminAnalyticsPage() {
   const { isAdmin, loading } = useSession();
   const { data, isLoading: loadingData } = useAdminAnalytics();
+
+  useRealtimeAdmin(["analytics_events"]);
 
   const stats = data?.stats ?? {
     totalViews: 0, totalReads: 0, totalFollows: 0, totalSignups: 0,

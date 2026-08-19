@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireAdmin } from "@/lib/admin-auth.server";
 import { deleteFromStorage } from "@/lib/storage";
 
 export const Route = createFileRoute("/api/admin/media/$assetId")({
@@ -7,6 +8,7 @@ export const Route = createFileRoute("/api/admin/media/$assetId")({
     handlers: {
       POST: async ({ request, params }) => {
         try {
+          await requireAdmin(request);
           const { assetId } = params;
           const body = await request.json();
           const action = body.action;
@@ -49,12 +51,14 @@ export const Route = createFileRoute("/api/admin/media/$assetId")({
 
           return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400 });
         } catch (e: any) {
+          if (e instanceof Response) return e;
           return new Response(JSON.stringify({ error: e.message }), { status: 500 });
         }
       },
 
-      DELETE: async ({ params }) => {
+      DELETE: async ({ request, params }) => {
         try {
+          await requireAdmin(request);
           const { assetId } = params;
 
           const { data: asset } = await supabaseAdmin
@@ -76,6 +80,7 @@ export const Route = createFileRoute("/api/admin/media/$assetId")({
           if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
           return new Response(JSON.stringify({ success: true }), { status: 200 });
         } catch (e: any) {
+          if (e instanceof Response) return e;
           return new Response(JSON.stringify({ error: e.message }), { status: 500 });
         }
       },

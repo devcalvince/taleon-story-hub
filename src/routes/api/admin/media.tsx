@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { requireAdmin } from "@/lib/admin-auth.server";
 import { uploadToStorage, buildStoragePath, sanitizeFilename, ensureBucket } from "@/lib/storage";
 import { importExternalImage, sanitizeImportFilename } from "@/lib/image-import";
 
@@ -8,6 +9,7 @@ export const Route = createFileRoute("/api/admin/media")({
     handlers: {
       POST: async ({ request }) => {
         try {
+          await requireAdmin(request);
           const formData = await request.formData();
           const action = formData.get("action") as string;
 
@@ -132,12 +134,14 @@ export const Route = createFileRoute("/api/admin/media")({
 
           return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400 });
         } catch (e: any) {
+          if (e instanceof Response) return e;
           return new Response(JSON.stringify({ error: e.message || "Internal error" }), { status: 500 });
         }
       },
 
       GET: async ({ request }) => {
         try {
+          await requireAdmin(request);
           const url = new URL(request.url);
           const storyId = url.searchParams.get("storyId") || undefined;
           const chapterId = url.searchParams.get("chapterId") || undefined;
@@ -171,6 +175,7 @@ export const Route = createFileRoute("/api/admin/media")({
 
           return new Response(JSON.stringify({ data, count, page, limit }), { status: 200 });
         } catch (e: any) {
+          if (e instanceof Response) return e;
           return new Response(JSON.stringify({ error: e.message }), { status: 500 });
         }
       },

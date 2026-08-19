@@ -58,7 +58,10 @@ function addCacheHeaders(response: Response, request: Request): Response {
     headers.set("Expires", "0");
     headers.set("Surrogate-Control", "no-store");
   } else {
-    headers.set("Cache-Control", "no-cache, must-revalidate");
+    headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    headers.set("Pragma", "no-cache");
+    headers.set("Expires", "0");
+    headers.set("Surrogate-Control", "no-store");
     headers.set("Vary", "Accept-Encoding, Cookie");
   }
   return new Response(response.body, {

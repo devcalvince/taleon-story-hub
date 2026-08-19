@@ -192,10 +192,9 @@ export async function track(
 
 /** Track a page view with optional story context. */
 export function trackPageView(pathname: string, storyId?: string) {
-  const isStory = pathname.startsWith("/story/");
-  if (isStory && storyId) {
-    track("story_view", { storyId, metadata: { pathname } });
-  } else if (pathname === "/") {
+  // Skip story and chapter pages — they have their own dedicated tracking
+  if (pathname.startsWith("/story/")) return;
+  if (pathname === "/") {
     track("landing_page_view", { metadata: { pathname } });
   } else {
     track("page_view", { metadata: { pathname } });

@@ -100,7 +100,7 @@ function Home() {
 
 function Hero({ story }: { story: StorySummary & { description?: string } }) {
   useEffect(() => {
-    track("page_view", { metadata: { page: "home" } });
+    track("landing_page_view", { metadata: { page: "home" } });
   }, []);
 
   return (

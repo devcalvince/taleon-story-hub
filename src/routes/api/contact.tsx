@@ -1,7 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const contactSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -18,7 +17,7 @@ export const Route = createFileRoute("/api/contact")({
           const body = await request.json();
           const validated = contactSchema.parse(body);
 
-          const { error } = await getSupabaseAdmin()
+          const { error } = await supabaseAdmin
             .from("contact_submissions")
             .insert({
               name: validated.name,

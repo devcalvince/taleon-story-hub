@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { SessionProvider } from "@/hooks/useSession";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { usePageTracking } from "@/hooks/usePageTracking";
 
 function NotFoundComponent() {
   return (
@@ -139,6 +140,8 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  usePageTracking();
 
   return (
     <QueryClientProvider client={queryClient}>

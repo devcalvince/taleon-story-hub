@@ -56,7 +56,10 @@ function StoryPage() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    track("story_view", { storyId: story.id });
+    track("story_view", {
+      storyId: story.id,
+      metadata: { pathname: window.location.pathname },
+    });
   }, [story.id]);
 
   useEffect(() => {
@@ -73,7 +76,7 @@ function StoryPage() {
     } else {
       await supabase.from("follows").insert({ story_id: story.id, user_id: user.id });
       setFollowing(true);
-      track("story_followed", { storyId: story.id });
+      track("story_follow", { storyId: story.id });
     }
   }
 
@@ -85,7 +88,7 @@ function StoryPage() {
     } else {
       await supabase.from("bookmarks").insert({ story_id: story.id, user_id: user.id });
       setSaved(true);
-      track("story_saved", { storyId: story.id });
+      track("story_bookmark", { storyId: story.id });
     }
   }
 

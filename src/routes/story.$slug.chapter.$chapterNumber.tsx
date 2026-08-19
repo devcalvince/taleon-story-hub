@@ -5,7 +5,7 @@ import { fetchChapter } from "@/lib/catalog.functions";
 import { ShareRow } from "@/components/site/ShareRow";
 import { useSession } from "@/hooks/useSession";
 import { supabase } from "@/integrations/supabase/client";
-import { track } from "@/lib/analytics";
+import { track, trackChapterProgress } from "@/lib/analytics";
 
 export const Route = createFileRoute("/story/$slug/chapter/$chapterNumber")({
   loader: async ({ params }) => {
@@ -48,19 +48,37 @@ function ChapterPage() {
   const [bookmarked, setBookmarked] = useState(false);
 
   useEffect(() => {
-    track("chapter_started", { storyId: story.id, chapterId: chapter.id });
+    track("chapter_view", { storyId: story.id, chapterId: chapter.id });
+    track("chapter_start", { storyId: story.id, chapterId: chapter.id });
   }, [story.id, chapter.id]);
+
+  const [funnelMilestones, setFunnelMilestones] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     function onScroll() {
       const total = document.body.scrollHeight - window.innerHeight;
       const pct = total > 0 ? Math.min(100, (window.scrollY / total) * 100) : 0;
       setProgress(pct);
+
+      // Track funnel milestones (25%, 50%, 75%, 100%)
+      const milestones = [25, 50, 75, 100];
+      for (const milestone of milestones) {
+        if (pct >= milestone && !funnelMilestones.has(milestone)) {
+          setFunnelMilestones((prev) => new Set([...prev, milestone]));
+          trackChapterProgress({
+            storyId: story.id,
+            chapterId: chapter.id,
+            percent: milestone,
+            chapterNumber: chapter.chapter_number,
+            wordLength: chapter.word_count,
+          });
+        }
+      }
     }
     window.addEventListener("scroll", onScroll, { passive: true });
     onScroll();
     return () => window.removeEventListener("scroll", onScroll);
-  }, [chapter.id]);
+  }, [chapter.id, story.id, funnelMilestones]);
 
   // Save reading position for signed-in members.
   useEffect(() => {
@@ -75,7 +93,7 @@ function ChapterPage() {
         completed: progress > 92,
         updated_at: new Date().toISOString(),
       });
-      if (progress > 92) track("chapter_completed", { storyId: story.id, chapterId: chapter.id });
+      if (progress > 92) track("chapter_complete", { storyId: story.id, chapterId: chapter.id });
     }, 4000);
     return () => clearTimeout(timer);
   }, [user, progress, story.id, chapter.id, chapter.chapter_number]);

@@ -3,7 +3,12 @@ import { fetchGenres, fetchStories } from "@/lib/catalog.functions";
 import { StoryGrid, type StorySummary } from "@/components/site/StoryCard";
 import { PageHeader } from "@/components/site/Section";
 
-type StoriesSearch = { genre?: string; sort?: string; q?: string; status?: string };
+type StoriesSearch = {
+  genre?: string | undefined;
+  sort?: string | undefined;
+  q?: string | undefined;
+  status?: string | undefined;
+};
 
 const SORTS = [
   { key: "trending", label: "Trending" },
@@ -15,10 +20,10 @@ const SORTS = [
 
 export const Route = createFileRoute("/stories")({
   validateSearch: (search: Record<string, unknown>): StoriesSearch => ({
-    genre: typeof search.genre === "string" ? search.genre : undefined,
-    sort: typeof search.sort === "string" ? search.sort : undefined,
-    q: typeof search.q === "string" ? search.q : undefined,
-    status: typeof search.status === "string" ? search.status : undefined,
+    genre: typeof search["genre"] === "string" ? (search["genre"] as string) : undefined,
+    sort: typeof search["sort"] === "string" ? (search["sort"] as string) : undefined,
+    q: typeof search["q"] === "string" ? (search["q"] as string) : undefined,
+    status: typeof search["status"] === "string" ? (search["status"] as string) : undefined,
   }),
   loaderDeps: ({ search }) => search,
   loader: async ({ deps }) => ({

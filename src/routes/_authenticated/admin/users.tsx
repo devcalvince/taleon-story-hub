@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 import { useSession } from "@/hooks/useSession";
+import { useAdminUsers } from "@/hooks/use-admin-data";
 import { PageHeader, EmptyState } from "@/components/site/Section";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Users, Search, Shield, UserCheck, Calendar } from "lucide-react";
+import { Search, Shield } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/users")({
   head: () => ({
@@ -17,54 +17,10 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
   component: AdminUsersPage,
 });
 
-interface UserProfile {
-  id: string;
-  display_name: string | null;
-  username: string | null;
-  avatar_url: string | null;
-  bio: string | null;
-  created_at: string;
-  user_roles: { role: string }[];
-  _follows?: number;
-  _bookmarks?: number;
-}
-
 function AdminUsersPage() {
   const { isAdmin, loading } = useSession();
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const { data: users = [], isLoading: loadingData } = useAdminUsers();
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    fetchUsers();
-  }, [isAdmin]);
-
-  async function fetchUsers() {
-    setLoadingData(true);
-    const { data: profiles } = await supabase
-      .from("profiles")
-      .select("*, user_roles(role)")
-      .order("created_at", { ascending: false });
-
-    // Get follow/bookmark counts per user
-    const enriched = await Promise.all(
-      (profiles ?? []).map(async (p) => {
-        const [followsRes, bookmarksRes] = await Promise.all([
-          supabase.from("follows").select("id", { count: "exact", head: true }).eq("user_id", p.id),
-          supabase.from("bookmarks").select("id", { count: "exact", head: true }).eq("user_id", p.id),
-        ]);
-        return {
-          ...p,
-          _follows: followsRes.count ?? 0,
-          _bookmarks: bookmarksRes.count ?? 0,
-        };
-      })
-    );
-
-    setUsers(enriched);
-    setLoadingData(false);
-  }
 
   const filtered = users.filter(u => {
     if (!searchQuery) return true;
@@ -93,7 +49,6 @@ function AdminUsersPage() {
     <>
       <PageHeader eyebrow="Admin" title="Manage Users" lede="View and manage user accounts." />
       <div className="mx-auto w-full max-w-7xl space-y-6 px-4 pb-20 sm:px-6">
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-4">
           <div className="rounded-lg border border-border bg-surface-2 p-4">
             <p className="text-xs text-muted-foreground">Total Users</p>
@@ -109,7 +64,6 @@ function AdminUsersPage() {
           </div>
         </div>
 
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
@@ -120,7 +74,6 @@ function AdminUsersPage() {
           />
         </div>
 
-        {/* Users Table */}
         {loadingData ? (
           <div className="text-center py-8 text-muted-foreground">Loading users...</div>
         ) : filtered.length === 0 ? (

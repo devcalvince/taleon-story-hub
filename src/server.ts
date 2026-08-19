@@ -44,12 +44,37 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+function addCacheHeaders(response: Response, request: Request): Response {
+  const url = new URL(request.url);
+  const isApi = url.pathname.startsWith("/api/");
+  const isAsset = url.pathname.startsWith("/assets/") || url.pathname.match(/\.\w{2,4}$/);
+
+  if (isAsset) return response;
+
+  const headers = new Headers(response.headers);
+  if (isApi) {
+    headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    headers.set("Pragma", "no-cache");
+    headers.set("Expires", "0");
+    headers.set("Surrogate-Control", "no-store");
+  } else {
+    headers.set("Cache-Control", "no-cache, must-revalidate");
+    headers.set("Vary", "Accept-Encoding, Cookie");
+  }
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
-      return await normalizeCatastrophicSsrResponse(response);
+      const normalized = await normalizeCatastrophicSsrResponse(response);
+      return addCacheHeaders(normalized, request);
     } catch (error) {
       console.error(error);
       return new Response(renderErrorPage(), {

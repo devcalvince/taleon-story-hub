@@ -1,7 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
+import { useAdminContacts } from "@/hooks/use-admin-data";
+import { queryKeys } from "@/lib/query-keys";
 import { PageHeader, EmptyState } from "@/components/site/Section";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,25 +34,12 @@ interface ContactSubmission {
 
 function AdminContactsPage() {
   const { isAdmin, loading } = useSession();
-  const [submissions, setSubmissions] = useState<ContactSubmission[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSubmission, setSelectedSubmission] = useState<ContactSubmission | null>(null);
 
-  useEffect(() => {
-    if (!isAdmin) return;
-    fetchSubmissions();
-  }, [isAdmin]);
-
-  async function fetchSubmissions() {
-    setLoadingData(true);
-    const { data } = await supabase
-      .from("contact_submissions")
-      .select("*")
-      .order("created_at", { ascending: false });
-    setSubmissions(data ?? []);
-    setLoadingData(false);
-  }
+  const { query, invalidate } = useAdminContacts();
+  const submissions = query.data ?? [];
 
   const filtered = submissions.filter(s => {
     if (!searchQuery) return true;
@@ -62,30 +52,69 @@ function AdminContactsPage() {
 
   const unreadCount = submissions.filter(s => s.status === "unread").length;
 
-  async function markAsRead(id: string) {
-    await supabase.from("contact_submissions").update({ status: "read" }).eq("id", id);
-    setSubmissions(prev => prev.map(s => s.id === id ? { ...s, status: "read" as const } : s));
-    if (selectedSubmission?.id === id) {
-      setSelectedSubmission(prev => prev ? { ...prev, status: "read" } : null);
-    }
-  }
+  const markAsReadMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("contact_submissions").update({ status: "read" }).eq("id", id);
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.adminContacts });
+      const previous = queryClient.getQueryData<ContactSubmission[]>(queryKeys.adminContacts);
+      queryClient.setQueryData<ContactSubmission[]>(queryKeys.adminContacts, (old) =>
+        (old ?? []).map(s => s.id === id ? { ...s, status: "read" as const } : s)
+      );
+      if (selectedSubmission?.id === id) {
+        setSelectedSubmission(prev => prev ? { ...prev, status: "read" } : null);
+      }
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.adminContacts, context.previous);
+      }
+    },
+    onSettled: () => {
+      invalidate();
+    },
+  });
 
-  async function markAsReplied(id: string) {
-    await supabase.from("contact_submissions").update({ status: "replied" }).eq("id", id);
-    setSubmissions(prev => prev.map(s => s.id === id ? { ...s, status: "replied" as const } : s));
-    if (selectedSubmission?.id === id) {
-      setSelectedSubmission(prev => prev ? { ...prev, status: "replied" } : null);
-    }
-    toast.success("Marked as replied");
-  }
+  const markAsRepliedMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("contact_submissions").update({ status: "replied" }).eq("id", id);
+    },
+    onMutate: async (id) => {
+      await queryClient.cancelQueries({ queryKey: queryKeys.adminContacts });
+      const previous = queryClient.getQueryData<ContactSubmission[]>(queryKeys.adminContacts);
+      queryClient.setQueryData<ContactSubmission[]>(queryKeys.adminContacts, (old) =>
+        (old ?? []).map(s => s.id === id ? { ...s, status: "replied" as const } : s)
+      );
+      if (selectedSubmission?.id === id) {
+        setSelectedSubmission(prev => prev ? { ...prev, status: "replied" } : null);
+      }
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(queryKeys.adminContacts, context.previous);
+      }
+    },
+    onSettled: () => {
+      invalidate();
+      toast.success("Marked as replied");
+    },
+  });
 
-  async function deleteSubmission(id: string) {
-    if (!confirm("Delete this submission?")) return;
-    await supabase.from("contact_submissions").delete().eq("id", id);
-    setSubmissions(prev => prev.filter(s => s.id !== id));
-    if (selectedSubmission?.id === id) setSelectedSubmission(null);
-    toast.success("Deleted");
-  }
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      if (!confirm("Delete this submission?")) throw new Error("Cancelled");
+      await supabase.from("contact_submissions").delete().eq("id", id);
+      return id;
+    },
+    onSuccess: (id) => {
+      invalidate();
+      if (selectedSubmission?.id === id) setSelectedSubmission(null);
+      toast.success("Deleted");
+    },
+  });
 
   function getStatusBadge(status: string) {
     switch (status) {
@@ -111,24 +140,22 @@ function AdminContactsPage() {
     <>
       <PageHeader eyebrow="Admin" title="Contact Submissions" lede={`${unreadCount} unread message${unreadCount !== 1 ? 's' : ''}.`} />
       <div className="mx-auto w-full max-w-7xl space-y-6 px-4 pb-20 sm:px-6">
-        {/* Search */}
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Search submissions..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
         </div>
 
-        {loadingData ? (
+        {query.isLoading ? (
           <div className="text-center py-8 text-muted-foreground">Loading submissions...</div>
         ) : filtered.length === 0 ? (
           <EmptyState title="No submissions" body={searchQuery ? "Try a different search." : "No contact form submissions yet."} />
         ) : (
           <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
-            {/* List */}
             <div className="space-y-2">
               {filtered.map((s) => (
                 <button
                   key={s.id}
-                  onClick={() => { setSelectedSubmission(s); if (s.status === "unread") markAsRead(s.id); }}
+                  onClick={() => { setSelectedSubmission(s); if (s.status === "unread") markAsReadMutation.mutate(s.id); }}
                   className={`w-full rounded-lg border border-border p-4 text-left transition-colors ${
                     selectedSubmission?.id === s.id
                       ? "border-gold/50 bg-surface-2"
@@ -155,7 +182,6 @@ function AdminContactsPage() {
               ))}
             </div>
 
-            {/* Detail */}
             {selectedSubmission ? (
               <div className="rounded-lg border border-border bg-surface-2 p-6 sticky top-24">
                 <div className="flex items-start justify-between">
@@ -177,11 +203,11 @@ function AdminContactsPage() {
                     Reply via Email
                   </a>
                   {selectedSubmission.status !== "replied" && (
-                    <Button variant="outline" size="sm" onClick={() => markAsReplied(selectedSubmission.id)}>
+                    <Button variant="outline" size="sm" onClick={() => markAsRepliedMutation.mutate(selectedSubmission.id)}>
                       Mark as Replied
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" onClick={() => deleteSubmission(selectedSubmission.id)} className="text-red-500 hover:text-red-600">
+                  <Button variant="outline" size="sm" onClick={() => deleteMutation.mutate(selectedSubmission.id)} className="text-red-500 hover:text-red-600">
                     Delete
                   </Button>
                 </div>

@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
+import { useAdminAnalytics } from "@/hooks/use-admin-data";
 import { PageHeader, EmptyState } from "@/components/site/Section";
 import { Badge } from "@/components/ui/badge";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from "recharts";
@@ -17,162 +16,21 @@ export const Route = createFileRoute("/_authenticated/admin/analytics")({
   component: AdminAnalyticsPage,
 });
 
-interface Stats {
-  totalViews: number;
-  totalReads: number;
-  totalFollows: number;
-  totalSignups: number;
-  totalChapterReads: number;
-  totalAudioPlays: number;
-  totalVideoPlays: number;
-  totalSearches: number;
-  totalShares: number;
-}
-
-interface DailyVisitors {
-  date: string;
-  visitors: number;
-}
-
-interface TopStory {
-  title: string;
-  slug: string;
-  views: number;
-  reads: number;
-  completionRate: number;
-}
-
-interface RecentEvent {
-  id: number;
-  event_name: string;
-  created_at: string;
-  metadata: any;
-}
-
 const COLORS = ["#7C3AED", "#F4C95D", "#10B981", "#3B82F6", "#EF4444", "#F59E0B"];
 
 function AdminAnalyticsPage() {
   const { isAdmin, loading } = useSession();
-  const [stats, setStats] = useState<Stats>({
+  const { data, isLoading: loadingData } = useAdminAnalytics();
+
+  const stats = data?.stats ?? {
     totalViews: 0, totalReads: 0, totalFollows: 0, totalSignups: 0,
     totalChapterReads: 0, totalAudioPlays: 0, totalVideoPlays: 0,
     totalSearches: 0, totalShares: 0,
-  });
-  const [dailyVisitors, setDailyVisitors] = useState<DailyVisitors[]>([]);
-  const [topStories, setTopStories] = useState<TopStory[]>([]);
-  const [recentEvents, setRecentEvents] = useState<RecentEvent[]>([]);
-  const [eventBreakdown, setEventBreakdown] = useState<{ name: string; value: number }[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    fetchAnalytics();
-  }, [isAdmin]);
-
-  async function fetchAnalytics() {
-    setLoadingData(true);
-
-    // Fetch all analytics events
-    const { data: events } = await supabase
-      .from("analytics_events")
-      .select("*")
-      .order("created_at", { ascending: false })
-      .limit(1000);
-
-    // Fetch counts
-    const [followsRes, profilesRes] = await Promise.all([
-      supabase.from("follows").select("id", { count: "exact", head: true }),
-      supabase.from("profiles").select("id", { count: "exact", head: true }),
-    ]);
-
-    // Calculate stats from events
-    const allEvents = events ?? [];
-    const views = allEvents.filter(e => e.event_name === "page_view" || e.event_name === "story_view").length;
-    const chapterReads = allEvents.filter(e => e.event_name === "chapter_started" || e.event_name === "chapter_completed").length;
-    const audioPlays = allEvents.filter(e => e.event_name === "audio_started").length;
-    const videoPlays = allEvents.filter(e => e.event_name === "video_started").length;
-    const searches = allEvents.filter(e => e.event_name === "search").length;
-    const shares = allEvents.filter(e => e.event_name === "share").length;
-
-    setStats({
-      totalViews: views,
-      totalReads: allEvents.filter(e => e.event_name === "chapter_completed").length,
-      totalFollows: followsRes.count ?? 0,
-      totalSignups: profilesRes.count ?? 0,
-      totalChapterReads: chapterReads,
-      totalAudioPlays: audioPlays,
-      totalVideoPlays: videoPlays,
-      totalSearches: searches,
-      totalShares: shares,
-    });
-
-    // Daily visitors (last 14 days)
-    const dailyMap = new Map<string, number>();
-    const now = new Date();
-    for (let i = 13; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      dailyMap.set(d.toISOString().slice(0, 10), 0);
-    }
-    for (const e of allEvents) {
-      const day = e.created_at?.slice(0, 10);
-      if (dailyMap.has(day)) {
-        dailyMap.set(day, (dailyMap.get(day) ?? 0) + 1);
-      }
-    }
-    setDailyVisitors(Array.from(dailyMap.entries()).map(([date, visitors]) => ({ date: date.slice(5), visitors })));
-
-    // Top stories
-    const storyViews = new Map<string, { title: string; slug: string; views: number; reads: number }>();
-    for (const e of allEvents) {
-      if (e.event_name === "story_view" && e.story_id) {
-        const existing = storyViews.get(e.story_id) ?? { title: "", slug: "", views: 0, reads: 0 };
-        existing.views++;
-        storyViews.set(e.story_id, existing);
-      }
-      if (e.event_name === "chapter_completed" && e.story_id) {
-        const existing = storyViews.get(e.story_id) ?? { title: "", slug: "", views: 0, reads: 0 };
-        existing.reads++;
-        storyViews.set(e.story_id, existing);
-      }
-    }
-
-    // Enrich with story titles
-    const storyIds = Array.from(storyViews.keys());
-    if (storyIds.length) {
-      const { data: storyData } = await supabase.from("stories").select("id, title, slug").in("id", storyIds);
-      for (const s of storyData ?? []) {
-        const existing = storyViews.get(s.id);
-        if (existing) {
-          existing.title = s.title;
-          existing.slug = s.slug;
-        }
-      }
-    }
-
-    const topStoriesArr = Array.from(storyViews.values())
-      .map(s => ({ ...s, completionRate: s.views > 0 ? Math.round((s.reads / s.views) * 100) : 0 }))
-      .sort((a, b) => b.views - a.views)
-      .slice(0, 8);
-    setTopStories(topStoriesArr);
-
-    // Event breakdown for pie chart
-    const eventCounts = new Map<string, number>();
-    for (const e of allEvents) {
-      eventCounts.set(e.event_name, (eventCounts.get(e.event_name) ?? 0) + 1);
-    }
-    setEventBreakdown(
-      Array.from(eventCounts.entries())
-        .map(([name, value]) => ({ name: name.replace(/_/g, " "), value }))
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 6)
-    );
-
-    // Recent events
-    setRecentEvents(allEvents.slice(0, 20));
-
-    setLoadingData(false);
-  }
+  };
+  const dailyVisitors = data?.dailyVisitors ?? [];
+  const topStories = data?.topStories ?? [];
+  const recentEvents = data?.recentEvents ?? [];
+  const eventBreakdown = data?.eventBreakdown ?? [];
 
   if (loading) return <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">Loading…</div>;
   if (!isAdmin) {

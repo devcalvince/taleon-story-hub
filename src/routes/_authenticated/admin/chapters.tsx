@@ -1,7 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
+import { useAdminChapters } from "@/hooks/use-admin-data";
+import { queryKeys } from "@/lib/query-keys";
 import { PageHeader, EmptyState } from "@/components/site/Section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,22 +39,27 @@ interface Chapter {
   stories: { title: string; slug: string } | null;
 }
 
-interface Story {
-  id: string;
-  title: string;
-  slug: string;
-}
-
 function AdminChaptersPage() {
   const { isAdmin, loading } = useSession();
-  const [chapters, setChapters] = useState<Chapter[]>([]);
-  const [stories, setStories] = useState<Story[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const queryClient = useQueryClient();
+  const { query: chaptersQuery, invalidate: invalidateChapters } = useAdminChapters();
+
+  const storiesQuery = useQuery({
+    queryKey: [...queryKeys.adminStories, "dropdown"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stories")
+        .select("id, title, slug")
+        .order("title");
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+    staleTime: 0,
+  });
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingChapter, setEditingChapter] = useState<Chapter | null>(null);
-  const [saving, setSaving] = useState(false);
 
-  // Form state
   const [formStoryId, setFormStoryId] = useState("");
   const [formTitle, setFormTitle] = useState("");
   const [formChapterNumber, setFormChapterNumber] = useState(1);
@@ -61,21 +69,64 @@ function AdminChaptersPage() {
   const [formAudioUrl, setFormAudioUrl] = useState("");
   const [formVideoUrl, setFormVideoUrl] = useState("");
 
-  useEffect(() => {
-    if (!isAdmin) return;
-    fetchData();
-  }, [isAdmin]);
+  const chapters = chaptersQuery.data ?? [];
+  const stories = storiesQuery.data ?? [];
+  const isLoadingData = chaptersQuery.isLoading || storiesQuery.isLoading;
 
-  async function fetchData() {
-    setLoadingData(true);
-    const [chaptersRes, storiesRes] = await Promise.all([
-      supabase.from("chapters").select("*, stories(title, slug)").order("chapter_number"),
-      supabase.from("stories").select("id, title, slug").order("title"),
-    ]);
-    setChapters(chaptersRes.data ?? []);
-    setStories(storiesRes.data ?? []);
-    setLoadingData(false);
-  }
+  const invalidateAll = () => {
+    invalidateChapters();
+    queryClient.invalidateQueries({ queryKey: queryKeys.adminStories });
+  };
+
+  const saveMutation = useMutation({
+    mutationFn: async (chapterData: Record<string, unknown>) => {
+      if (editingChapter) {
+        const { error } = await supabase
+          .from("chapters")
+          .update(chapterData)
+          .eq("id", editingChapter.id);
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await supabase.from("chapters").insert(chapterData);
+        if (error) throw new Error(error.message);
+      }
+    },
+    onSuccess: () => {
+      toast.success(editingChapter ? "Chapter updated" : "Chapter created");
+      setDialogOpen(false);
+      invalidateAll();
+    },
+    onError: (err: Error) => {
+      toast.error(err.message);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("chapters").delete().eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Chapter deleted");
+      invalidateAll();
+    },
+  });
+
+  const toggleMutation = useMutation({
+    mutationFn: async (ch: Chapter) => {
+      const { error } = await supabase
+        .from("chapters")
+        .update({
+          is_published: !ch.is_published,
+          published_at: !ch.is_published ? new Date().toISOString() : null,
+        })
+        .eq("id", ch.id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      invalidateAll();
+    },
+  });
 
   function openCreate() {
     setEditingChapter(null);
@@ -103,15 +154,13 @@ function AdminChaptersPage() {
     setDialogOpen(true);
   }
 
-  async function handleSave() {
+  function handleSave() {
     if (!formStoryId || !formTitle.trim()) {
       toast.error("Story and title are required");
       return;
     }
-    setSaving(true);
     const wordCount = formContent ? formContent.split(/\s+/).filter(Boolean).length : 0;
-
-    const chapterData = {
+    saveMutation.mutate({
       story_id: formStoryId,
       title: formTitle,
       chapter_number: formChapterNumber,
@@ -122,44 +171,16 @@ function AdminChaptersPage() {
       published_at: formIsPublished ? new Date().toISOString() : null,
       audio_url: formAudioUrl || null,
       video_url: formVideoUrl || null,
-    };
-
-    if (editingChapter) {
-      const { error } = await supabase.from("chapters").update(chapterData).eq("id", editingChapter.id);
-      if (error) {
-        toast.error(error.message);
-        setSaving(false);
-        return;
-      }
-      toast.success("Chapter updated");
-    } else {
-      const { error } = await supabase.from("chapters").insert(chapterData);
-      if (error) {
-        toast.error(error.message);
-        setSaving(false);
-        return;
-      }
-      toast.success("Chapter created");
-    }
-
-    setDialogOpen(false);
-    setSaving(false);
-    fetchData();
+    });
   }
 
-  async function deleteChapter(id: string) {
+  function deleteChapter(id: string) {
     if (!confirm("Delete this chapter?")) return;
-    await supabase.from("chapters").delete().eq("id", id);
-    toast.success("Chapter deleted");
-    fetchData();
+    deleteMutation.mutate(id);
   }
 
-  async function togglePublished(ch: Chapter) {
-    await supabase.from("chapters").update({
-      is_published: !ch.is_published,
-      published_at: !ch.is_published ? new Date().toISOString() : null,
-    }).eq("id", ch.id);
-    fetchData();
+  function togglePublished(ch: Chapter) {
+    toggleMutation.mutate(ch);
   }
 
   if (loading) return <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">Loading…</div>;
@@ -183,7 +204,7 @@ function AdminChaptersPage() {
           </Button>
         </div>
 
-        {loadingData ? (
+        {isLoadingData ? (
           <div className="text-center py-8 text-muted-foreground">Loading chapters...</div>
         ) : chapters.length === 0 ? (
           <EmptyState title="No chapters" body="Create your first chapter to get started." />
@@ -304,8 +325,8 @@ function AdminChaptersPage() {
               </div>
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleSave} disabled={saving}>
-                  {saving ? "Saving..." : editingChapter ? "Update" : "Create"}
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : editingChapter ? "Update" : "Create"}
                 </Button>
               </div>
             </div>

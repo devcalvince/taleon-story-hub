@@ -1,7 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
+import { useAdminStories, useAdminGenres } from "@/hooks/use-admin-data";
+import { queryKeys } from "@/lib/query-keys";
 import { PageHeader, EmptyState } from "@/components/site/Section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,14 +51,17 @@ interface Genre {
 
 function AdminStoriesPage() {
   const { isAdmin, loading } = useSession();
-  const [stories, setStories] = useState<Story[]>([]);
-  const [genres, setGenres] = useState<Genre[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const queryClient = useQueryClient();
+  const storiesQuery = useAdminStories();
+  const genresData = useAdminGenres();
+  const genresQuery = genresData.query;
+  const stories = (storiesQuery.data ?? []) as Story[];
+  const genres = (genresQuery.data ?? []) as Genre[];
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStory, setEditingStory] = useState<Story | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Form state
   const [formTitle, setFormTitle] = useState("");
   const [formSlug, setFormSlug] = useState("");
   const [formAuthor, setFormAuthor] = useState("Taleon Studios");
@@ -68,22 +74,6 @@ function AdminStoriesPage() {
   const [formIsFeatured, setFormIsFeatured] = useState(false);
   const [formIsOriginal, setFormIsOriginal] = useState(true);
   const [formGenreIds, setFormGenreIds] = useState<string[]>([]);
-
-  useEffect(() => {
-    if (!isAdmin) return;
-    fetchData();
-  }, [isAdmin]);
-
-  async function fetchData() {
-    setLoadingData(true);
-    const [storiesRes, genresRes] = await Promise.all([
-      supabase.from("stories").select("*").order("created_at", { ascending: false }),
-      supabase.from("genres").select("id, name, slug").order("sort_order"),
-    ]);
-    setStories(storiesRes.data ?? []);
-    setGenres(genresRes.data ?? []);
-    setLoadingData(false);
-  }
 
   function openCreate() {
     setEditingStory(null);
@@ -153,7 +143,6 @@ function AdminStoriesPage() {
         setSaving(false);
         return;
       }
-      // Update genres
       await supabase.from("story_genres").delete().eq("story_id", editingStory.id);
       if (formGenreIds.length) {
         await supabase.from("story_genres").insert(formGenreIds.map(gid => ({ story_id: editingStory.id, genre_id: gid })));
@@ -174,7 +163,7 @@ function AdminStoriesPage() {
 
     setDialogOpen(false);
     setSaving(false);
-    fetchData();
+    queryClient.invalidateQueries({ queryKey: queryKeys.adminStories });
   }
 
   async function deleteStory(id: string) {
@@ -183,12 +172,12 @@ function AdminStoriesPage() {
     await supabase.from("chapters").delete().eq("story_id", id);
     await supabase.from("stories").delete().eq("id", id);
     toast.success("Story deleted");
-    fetchData();
+    queryClient.invalidateQueries({ queryKey: queryKeys.adminStories });
   }
 
   async function toggleFeatured(story: Story) {
     await supabase.from("stories").update({ is_featured: !story.is_featured }).eq("id", story.id);
-    fetchData();
+    queryClient.invalidateQueries({ queryKey: queryKeys.adminStories });
   }
 
   if (loading) return <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">Loading…</div>;
@@ -212,7 +201,7 @@ function AdminStoriesPage() {
           </Button>
         </div>
 
-        {loadingData ? (
+        {storiesQuery.isLoading ? (
           <div className="text-center py-8 text-muted-foreground">Loading stories...</div>
         ) : stories.length === 0 ? (
           <EmptyState title="No stories" body="Create your first story to get started." />

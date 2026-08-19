@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
+import { useAdminCounts, useAdminRecentStories } from "@/hooks/use-admin-data";
 import { PageHeader, EmptyState } from "@/components/site/Section";
 import { BookOpen, Users, BarChart3, FolderTree, Mail, Newspaper, Image, Film, MapPin, User, Wand2 } from "lucide-react";
 
@@ -22,30 +21,11 @@ export const Route = createFileRoute("/_authenticated/admin")({
 
 function AdminPage() {
   const { isAdmin, loading } = useSession();
-  const [stories, setStories] = useState<any[]>([]);
-  const [counts, setCounts] = useState({ stories: 0, chapters: 0, users: 0, genres: 0 });
+  const countsQuery = useAdminCounts();
+  const recentStoriesQuery = useAdminRecentStories();
 
-  useEffect(() => {
-    if (!isAdmin) return;
-    supabase
-      .from("stories")
-      .select("id, title, slug, status, is_premium, view_count, published_at")
-      .order("published_at", { ascending: false })
-      .then(({ data }) => setStories(data ?? []));
-
-    (async () => {
-      const tables = ["stories", "chapters", "profiles", "genres"] as const;
-      const results = await Promise.all(
-        tables.map((t) => supabase.from(t).select("id", { count: "exact", head: true })),
-      );
-      setCounts({
-        stories: results[0]?.count ?? 0,
-        chapters: results[1]?.count ?? 0,
-        users: results[2]?.count ?? 0,
-        genres: results[3]?.count ?? 0,
-      });
-    })();
-  }, [isAdmin]);
+  const counts = countsQuery.data ?? { stories: 0, chapters: 0, users: 0, genres: 0 };
+  const stories = recentStoriesQuery.data ?? [];
 
   if (loading) {
     return <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">Loading…</div>;

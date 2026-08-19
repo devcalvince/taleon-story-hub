@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
+import { useAdminGenres } from "@/hooks/use-admin-data";
 import { PageHeader, EmptyState } from "@/components/site/Section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,11 +34,12 @@ interface Genre {
 
 function AdminGenresPage() {
   const { isAdmin, loading } = useSession();
-  const [genres, setGenres] = useState<Genre[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const { query, invalidate } = useAdminGenres();
+  const genres = query.data ?? [];
+  const loadingData = query.isLoading;
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingGenre, setEditingGenre] = useState<Genre | null>(null);
-  const [saving, setSaving] = useState(false);
 
   const [formName, setFormName] = useState("");
   const [formSlug, setFormSlug] = useState("");
@@ -44,28 +47,8 @@ function AdminGenresPage() {
   const [formAccent, setFormAccent] = useState("#7C3AED");
   const [formSortOrder, setFormSortOrder] = useState(0);
 
-  useEffect(() => {
-    if (!isAdmin) return;
-    fetchGenres();
-  }, [isAdmin]);
-
-  async function fetchGenres() {
-    setLoadingData(true);
-    const { data } = await supabase.from("genres").select("*").order("sort_order");
-
-    // Get story counts
-    const enriched = await Promise.all(
-      (data ?? []).map(async (g) => {
-        const { count } = await supabase
-          .from("story_genres")
-          .select("id", { count: "exact", head: true })
-          .eq("genre_id", g.id);
-        return { ...g, story_count: count ?? 0 };
-      })
-    );
-
-    setGenres(enriched);
-    setLoadingData(false);
+  function generateSlug(name: string) {
+    return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   }
 
   function openCreate() {
@@ -88,18 +71,59 @@ function AdminGenresPage() {
     setDialogOpen(true);
   }
 
-  function generateSlug(name: string) {
-    return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  }
+  const createMutation = useMutation({
+    mutationFn: async (genreData: { name: string; slug: string; description: string | null; accent: string; sort_order: number }) => {
+      const { error } = await supabase.from("genres").insert(genreData);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: async () => {
+      toast.success("Genre created");
+      setDialogOpen(false);
+      await invalidate();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
 
-  async function handleSave() {
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, ...genreData }: { id: string; name: string; slug: string; description: string | null; accent: string; sort_order: number }) => {
+      const { error } = await supabase.from("genres").update(genreData).eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: async () => {
+      toast.success("Genre updated");
+      setDialogOpen(false);
+      await invalidate();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("story_genres").delete().eq("genre_id", id);
+      const { error } = await supabase.from("genres").delete().eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: async () => {
+      toast.success("Genre deleted");
+      await invalidate();
+    },
+    onError: (error: Error) => {
+      toast.error(error.message);
+    },
+  });
+
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+
+  function handleSave() {
     if (!formName.trim()) {
       toast.error("Name is required");
       return;
     }
-    setSaving(true);
     const slug = formSlug || generateSlug(formName);
-
     const genreData = {
       name: formName,
       slug,
@@ -109,34 +133,15 @@ function AdminGenresPage() {
     };
 
     if (editingGenre) {
-      const { error } = await supabase.from("genres").update(genreData).eq("id", editingGenre.id);
-      if (error) {
-        toast.error(error.message);
-        setSaving(false);
-        return;
-      }
-      toast.success("Genre updated");
+      updateMutation.mutate({ id: editingGenre.id, ...genreData });
     } else {
-      const { error } = await supabase.from("genres").insert(genreData);
-      if (error) {
-        toast.error(error.message);
-        setSaving(false);
-        return;
-      }
-      toast.success("Genre created");
+      createMutation.mutate(genreData);
     }
-
-    setDialogOpen(false);
-    setSaving(false);
-    fetchGenres();
   }
 
-  async function deleteGenre(id: string) {
+  function deleteGenre(id: string) {
     if (!confirm("Delete this genre? Stories with this genre will lose the association.")) return;
-    await supabase.from("story_genres").delete().eq("genre_id", id);
-    await supabase.from("genres").delete().eq("id", id);
-    toast.success("Genre deleted");
-    fetchGenres();
+    deleteMutation.mutate(id);
   }
 
   if (loading) return <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">Loading…</div>;
@@ -225,8 +230,8 @@ function AdminGenresPage() {
               </div>
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleSave} disabled={saving}>
-                  {saving ? "Saving..." : editingGenre ? "Update" : "Create"}
+                <Button onClick={handleSave} disabled={isSaving}>
+                  {isSaving ? "Saving..." : editingGenre ? "Update" : "Create"}
                 </Button>
               </div>
             </div>

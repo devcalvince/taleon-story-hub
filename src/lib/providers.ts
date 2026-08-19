@@ -8,7 +8,7 @@ export interface GenerateRequest {
   sceneId?: string;
 }
 
-export interface GenerateResult {
+export type GenerateResult = {
   ok: true;
   imageUrl: string;
   provider: string;
@@ -69,7 +69,7 @@ const providers: Record<string, ImageProvider> = {
 };
 
 export function getProvider(name: string): ImageProvider {
-  return providers[name] || providers.manual;
+  return providers[name] ?? providers["manual"]!;
 }
 
 export function registerProvider(provider: ImageProvider): void {
@@ -81,7 +81,7 @@ export function listProviders(): string[] {
 }
 
 export function getActiveProvider(): ImageProvider {
-  const name = process.env.IMAGE_PROVIDER || "manual";
+  const name = process.env["IMAGE_PROVIDER"] || "manual";
   return getProvider(name);
 }
 

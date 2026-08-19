@@ -62,16 +62,20 @@ export async function uploadImageAsset(
   const result = await uploadToStorage(path, buffer, contentType);
   if ("error" in result) return { error: result.error };
 
-  const { data: metadata } = await supabaseAdmin.rpc("storage.get_bucket" as any, { name: "story-assets" }).catch(() => ({ data: null }));
+  let metadata: any = null;
+  try {
+    const res = await supabaseAdmin.rpc("storage.get_bucket" as any, { name: "story-assets" });
+    metadata = res.data;
+  } catch { /* ignore */ }
 
   const { error: updateErr } = await supabaseAdmin
     .from("media_assets")
     .update({
       original_storage_path: result.path,
       public_url: result.publicUrl,
-      status: "ready",
-      source_type: "upload",
-    })
+      status: "ready" as any,
+      source_type: "upload" as any,
+    } as any)
     .eq("id", assetId);
 
   if (updateErr) return { error: updateErr.message };
@@ -102,10 +106,10 @@ export async function importExternalUrlAsset(
       width: result.width || null,
       height: result.height || null,
       format: result.format,
-      file_size: BigInt(result.fileSize),
-      status: "ready",
-      source_type: "external_url",
-    })
+      file_size: Number(BigInt(result.fileSize)),
+      status: "ready" as any,
+      source_type: "external_url" as any,
+    } as any)
     .eq("id", assetId);
 
   if (updateErr) return { error: updateErr.message };
@@ -196,8 +200,8 @@ export async function getAssets(filters: {
   if (filters.sceneId) query = query.eq("scene_id", filters.sceneId);
   if (filters.characterId) query = query.eq("character_id", filters.characterId);
   if (filters.locationId) query = query.eq("location_id", filters.locationId);
-  if (filters.assetType) query = query.eq("asset_type", filters.assetType);
-  if (filters.status) query = query.eq("status", filters.status);
+  if (filters.assetType) query = query.eq("asset_type", filters.assetType as any);
+  if (filters.status) query = query.eq("status", filters.status as any);
   if (filters.search) query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
 
   const page = filters.page || 1;

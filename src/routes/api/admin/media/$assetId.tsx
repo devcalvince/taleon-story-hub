@@ -14,7 +14,7 @@ export const Route = createFileRoute("/api/admin/media/$assetId")({
           if (action === "approve") {
             const { error } = await supabaseAdmin
               .from("media_assets")
-              .update({ status: "approved", approved: true, approved_by: body.userId, approved_at: new Date().toISOString() })
+              .update({ status: "approved" as any, approved: true, approved_by: body.userId, approved_at: new Date().toISOString() } as any)
               .eq("id", assetId);
             if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
             return new Response(JSON.stringify({ success: true }), { status: 200 });
@@ -23,7 +23,7 @@ export const Route = createFileRoute("/api/admin/media/$assetId")({
           if (action === "reject") {
             const { error } = await supabaseAdmin
               .from("media_assets")
-              .update({ status: "rejected", approved: false })
+              .update({ status: "rejected" as any, approved: false } as any)
               .eq("id", assetId);
             if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
             return new Response(JSON.stringify({ success: true }), { status: 200 });
@@ -32,7 +32,7 @@ export const Route = createFileRoute("/api/admin/media/$assetId")({
           if (action === "archive") {
             const { error } = await supabaseAdmin
               .from("media_assets")
-              .update({ status: "archived" })
+              .update({ status: "archived" as any } as any)
               .eq("id", assetId);
             if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
             return new Response(JSON.stringify({ success: true }), { status: 200 });
@@ -41,7 +41,7 @@ export const Route = createFileRoute("/api/admin/media/$assetId")({
           if (action === "publish") {
             const { error } = await supabaseAdmin
               .from("media_assets")
-              .update({ status: "published" })
+              .update({ status: "published" as any } as any)
               .eq("id", assetId);
             if (error) return new Response(JSON.stringify({ error: error.message }), { status: 500 });
             return new Response(JSON.stringify({ success: true }), { status: 200 });

@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { useAdminChapters } from "@/hooks/use-admin-data";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys, invalidateChapterData } from "@/lib/query-keys";
 import { PageHeader, EmptyState } from "@/components/site/Section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,8 +74,7 @@ function AdminChaptersPage() {
   const isLoadingData = chaptersQuery.isLoading || storiesQuery.isLoading;
 
   const invalidateAll = () => {
-    invalidateChapters();
-    queryClient.invalidateQueries({ queryKey: queryKeys.adminStories });
+    invalidateChapterData(queryClient);
   };
 
   const saveMutation = useMutation({
@@ -83,11 +82,11 @@ function AdminChaptersPage() {
       if (editingChapter) {
         const { error } = await supabase
           .from("chapters")
-          .update(chapterData)
+          .update(chapterData as any)
           .eq("id", editingChapter.id);
         if (error) throw new Error(error.message);
       } else {
-        const { error } = await supabase.from("chapters").insert(chapterData);
+        const { error } = await supabase.from("chapters").insert(chapterData as any);
         if (error) throw new Error(error.message);
       }
     },
@@ -118,7 +117,7 @@ function AdminChaptersPage() {
         .from("chapters")
         .update({
           is_published: !ch.is_published,
-          published_at: !ch.is_published ? new Date().toISOString() : null,
+          published_at: !ch.is_published ? new Date().toISOString() : (null as any),
         })
         .eq("id", ch.id);
       if (error) throw new Error(error.message);
@@ -242,7 +241,7 @@ function AdminChaptersPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         {ch.stories?.slug && (
-                          <Link to="/story/$slug/chapter/$chapterNumber" params={{ slug: ch.stories.slug, chapterNumber: ch.chapter_number }} className="p-1 text-muted-foreground hover:text-foreground">
+                          <Link to="/story/$slug/chapter/$chapterNumber" params={{ slug: ch.stories.slug, chapterNumber: String(ch.chapter_number) }} className="p-1 text-muted-foreground hover:text-foreground">
                             <Eye className="h-4 w-4" />
                           </Link>
                         )}

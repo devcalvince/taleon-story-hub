@@ -39,7 +39,7 @@ function AdminContactsPage() {
   const [selectedSubmission, setSelectedSubmission] = useState<ContactSubmission | null>(null);
 
   const { query, invalidate } = useAdminContacts();
-  const submissions = query.data ?? [];
+  const submissions = (query.data ?? []) as ContactSubmission[];
 
   const filtered = submissions.filter(s => {
     if (!searchQuery) return true;

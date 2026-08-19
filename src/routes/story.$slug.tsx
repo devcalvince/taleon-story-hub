@@ -314,7 +314,7 @@ function StoryVisualAssets({ storyId }: { storyId: string }) {
       .from("media_assets")
       .select("id, title, asset_type, public_url, status")
       .eq("story_id", storyId)
-      .in("status", ["approved", "published"])
+      .in("status", ["approved", "published"] as any)
       .order("asset_type")
       .then(({ data }) => setAssets(data ?? []));
   }, [storyId]);

@@ -1,12 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
+import { useAdminScenes, useAdminChaptersDropdown } from "@/hooks/use-admin-data";
+import { invalidateStoryData } from "@/lib/query-keys";
 import { PageHeader, EmptyState } from "@/components/site/Section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Plus, Pencil, Trash2, Film } from "lucide-react";
 import { toast } from "sonner";
@@ -34,12 +36,13 @@ interface Scene {
 
 function AdminScenesPage() {
   const { isAdmin, loading } = useSession();
-  const [scenes, setScenes] = useState<Scene[]>([]);
-  const [chapters, setChapters] = useState<any[]>([]);
-  const [loadingData, setLoadingData] = useState(true);
+  const qc = useQueryClient();
+  const { query: scenesQuery, invalidate } = useAdminScenes();
+  const { data: chapters = [] } = useAdminChaptersDropdown();
+  const scenes = (scenesQuery.data ?? []) as Scene[];
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<Scene | null>(null);
-  const [saving, setSaving] = useState(false);
 
   const [formChapterId, setFormChapterId] = useState("");
   const [formNumber, setFormNumber] = useState(1);
@@ -51,26 +54,6 @@ function AdminScenesPage() {
   const [formVisualPrompt, setFormVisualPrompt] = useState("");
   const [formCamera, setFormCamera] = useState("");
   const [formLighting, setFormLighting] = useState("");
-
-  useEffect(() => { if (isAdmin) { fetchScenes(); fetchChapters(); } }, [isAdmin]);
-
-  async function fetchScenes() {
-    setLoadingData(true);
-    const { data } = await supabase
-      .from("scenes")
-      .select("*, chapters(title, chapter_number, stories(title, slug))")
-      .order("created_at", { ascending: false });
-    setScenes(data ?? []);
-    setLoadingData(false);
-  }
-
-  async function fetchChapters() {
-    const { data } = await supabase
-      .from("chapters")
-      .select("id, title, chapter_number, stories(title, slug)")
-      .order("chapter_number");
-    setChapters(data ?? []);
-  }
 
   function openCreate() {
     setEditing(null);
@@ -102,10 +85,40 @@ function AdminScenesPage() {
     setDialogOpen(true);
   }
 
-  async function handleSave() {
+  const saveMutation = useMutation({
+    mutationFn: async (data: Record<string, unknown>) => {
+      if (editing) {
+        const { error } = await supabase.from("scenes").update(data as any).eq("id", editing.id);
+        if (error) throw new Error(error.message);
+      } else {
+        const { error } = await supabase.from("scenes").insert(data as any);
+        if (error) throw new Error(error.message);
+      }
+    },
+    onSuccess: () => {
+      toast.success(editing ? "Scene updated" : "Scene created");
+      setDialogOpen(false);
+      invalidate();
+      invalidateStoryData(qc);
+    },
+    onError: (err: Error) => toast.error(err.message),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("scenes").delete().eq("id", id);
+      if (error) throw new Error(error.message);
+    },
+    onSuccess: () => {
+      toast.success("Scene deleted");
+      invalidate();
+      invalidateStoryData(qc);
+    },
+  });
+
+  function handleSave() {
     if (!formTitle.trim() || !formChapterId) { toast.error("Title and chapter required"); return; }
-    setSaving(true);
-    const data = {
+    saveMutation.mutate({
       chapter_id: formChapterId,
       scene_number: formNumber,
       title: formTitle,
@@ -116,23 +129,7 @@ function AdminScenesPage() {
       visual_prompt: formVisualPrompt || null,
       camera_direction: formCamera || null,
       lighting_direction: formLighting || null,
-    };
-    if (editing) {
-      const { error } = await supabase.from("scenes").update(data).eq("id", editing.id);
-      if (error) { toast.error(error.message); setSaving(false); return; }
-      toast.success("Scene updated");
-    } else {
-      const { error } = await supabase.from("scenes").insert(data);
-      if (error) { toast.error(error.message); setSaving(false); return; }
-      toast.success("Scene created");
-    }
-    setDialogOpen(false); setSaving(false); fetchScenes();
-  }
-
-  async function deleteScene(id: string) {
-    if (!confirm("Delete this scene?")) return;
-    await supabase.from("scenes").delete().eq("id", id);
-    toast.success("Scene deleted"); fetchScenes();
+    });
   }
 
   if (loading) return <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground">Loading…</div>;
@@ -143,7 +140,7 @@ function AdminScenesPage() {
       <PageHeader eyebrow="Admin" title="Scenes" lede="Manage chapter scenes for visual production." />
       <div className="mx-auto w-full max-w-7xl space-y-6 px-4 pb-20 sm:px-6">
         <div className="flex justify-end"><Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" /> New Scene</Button></div>
-        {loadingData ? <div className="text-center py-8 text-muted-foreground">Loading...</div>
+        {scenesQuery.isLoading ? <div className="text-center py-8 text-muted-foreground">Loading...</div>
         : scenes.length === 0 ? <EmptyState title="No scenes" body="Create scenes to organize visual assets per chapter." />
         : (
           <div className="space-y-2">
@@ -161,7 +158,7 @@ function AdminScenesPage() {
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <button onClick={() => openEdit(s)} className="p-1 text-muted-foreground hover:text-gold"><Pencil className="h-4 w-4" /></button>
-                  <button onClick={() => deleteScene(s.id)} className="p-1 text-muted-foreground hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                  <button onClick={() => { if (confirm("Delete this scene?")) deleteMutation.mutate(s.id); }} className="p-1 text-muted-foreground hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
                 </div>
               </div>
             ))}
@@ -176,7 +173,7 @@ function AdminScenesPage() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Chapter *</label>
                   <select value={formChapterId} onChange={(e) => setFormChapterId(e.target.value)} className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm">
-                    {chapters.map((c) => <option key={c.id} value={c.id}>Ch. {c.chapter_number}: {c.title} ({c.stories?.title})</option>)}
+                    {(chapters as any[]).map((c: any) => <option key={c.id} value={c.id}>Ch. {c.chapter_number}: {c.title}</option>)}
                   </select>
                 </div>
                 <div className="space-y-2">
@@ -204,7 +201,7 @@ function AdminScenesPage() {
               </div>
               <div className="flex justify-end gap-2 pt-4">
                 <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleSave} disabled={saving}>{saving ? "Saving..." : editing ? "Update" : "Create"}</Button>
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>{saveMutation.isPending ? "Saving..." : editing ? "Update" : "Create"}</Button>
               </div>
             </div>
           </DialogContent>

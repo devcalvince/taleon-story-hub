@@ -4,6 +4,8 @@ import { useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { useAdminGenres } from "@/hooks/use-admin-data";
+import { invalidateGenreData } from "@/lib/query-keys";
+import { useQueryClient } from "@tanstack/react-query";
 import { PageHeader, EmptyState } from "@/components/site/Section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -34,6 +36,7 @@ interface Genre {
 
 function AdminGenresPage() {
   const { isAdmin, loading } = useSession();
+  const qc = useQueryClient();
   const { query, invalidate } = useAdminGenres();
   const genres = query.data ?? [];
   const loadingData = query.isLoading;
@@ -79,7 +82,7 @@ function AdminGenresPage() {
     onSuccess: async () => {
       toast.success("Genre created");
       setDialogOpen(false);
-      await invalidate();
+      await invalidateGenreData(qc);
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -94,7 +97,7 @@ function AdminGenresPage() {
     onSuccess: async () => {
       toast.success("Genre updated");
       setDialogOpen(false);
-      await invalidate();
+      await invalidateGenreData(qc);
     },
     onError: (error: Error) => {
       toast.error(error.message);
@@ -109,7 +112,7 @@ function AdminGenresPage() {
     },
     onSuccess: async () => {
       toast.success("Genre deleted");
-      await invalidate();
+      await invalidateGenreData(qc);
     },
     onError: (error: Error) => {
       toast.error(error.message);

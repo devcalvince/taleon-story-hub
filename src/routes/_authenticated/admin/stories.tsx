@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
 import { useAdminStories, useAdminGenres } from "@/hooks/use-admin-data";
-import { queryKeys } from "@/lib/query-keys";
+import { queryKeys, invalidateStoryData } from "@/lib/query-keys";
 import { PageHeader, EmptyState } from "@/components/site/Section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,8 +33,8 @@ interface Story {
   is_premium: boolean;
   is_featured: boolean;
   is_published: boolean;
-  view_count: number;
-  read_count: number;
+  views: number;
+  reads: number;
   author: string;
   published_at: string | null;
   created_at: string;
@@ -163,7 +163,7 @@ function AdminStoriesPage() {
 
     setDialogOpen(false);
     setSaving(false);
-    queryClient.invalidateQueries({ queryKey: queryKeys.adminStories });
+    invalidateStoryData(queryClient);
   }
 
   async function deleteStory(id: string) {
@@ -172,12 +172,12 @@ function AdminStoriesPage() {
     await supabase.from("chapters").delete().eq("story_id", id);
     await supabase.from("stories").delete().eq("id", id);
     toast.success("Story deleted");
-    queryClient.invalidateQueries({ queryKey: queryKeys.adminStories });
+    invalidateStoryData(queryClient);
   }
 
   async function toggleFeatured(story: Story) {
     await supabase.from("stories").update({ is_featured: !story.is_featured }).eq("id", story.id);
-    queryClient.invalidateQueries({ queryKey: queryKeys.adminStories });
+    invalidateStoryData(queryClient);
   }
 
   if (loading) return <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">Loading…</div>;
@@ -231,7 +231,7 @@ function AdminStoriesPage() {
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{s.is_premium ? "Premium" : "Free"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{s.view_count ?? 0}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{s.views ?? 0}</td>
                     <td className="px-4 py-3">
                       <button onClick={() => toggleFeatured(s)} className={s.is_featured ? "text-gold" : "text-muted-foreground hover:text-gold"}>
                         <Star className={`h-4 w-4 ${s.is_featured ? "fill-current" : ""}`} />

@@ -110,7 +110,7 @@ function AdminPage() {
                     <td className="px-4 py-3">{s.title}</td>
                     <td className="px-4 py-3 text-muted-foreground">{s.status}</td>
                     <td className="px-4 py-3 text-muted-foreground">{s.is_premium ? "Premium" : "Free"}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{s.view_count ?? 0}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{s.views ?? 0}</td>
                     <td className="px-4 py-3">
                       <Link to="/story/$slug" params={{ slug: s.slug }} className="text-gold">
                         View

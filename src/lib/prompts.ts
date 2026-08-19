@@ -200,7 +200,7 @@ export function buildScenePrompt(scene: PromptContext["scene"]): string {
   return parts.join("\n");
 }
 
-export function buildCharacterPrompt(char: PromptContext["characters"] extends Array<infer T> ? T : never): string {
+export function buildCharacterPrompt(char: any): string {
   const parts: string[] = [];
   if (char?.name) parts.push(`Character: ${char.name}`);
   if (char?.age) parts.push(`Age: ${char.age}`);

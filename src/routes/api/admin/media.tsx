@@ -55,7 +55,7 @@ export const Route = createFileRoute("/api/admin/media")({
                 status: "ready",
                 version: 1,
                 approved: false,
-              })
+              } as any)
               .select()
               .single();
 
@@ -119,7 +119,7 @@ export const Route = createFileRoute("/api/admin/media")({
                 status: "ready",
                 version: 1,
                 approved: false,
-              })
+              } as any)
               .select()
               .single();
 
@@ -159,8 +159,8 @@ export const Route = createFileRoute("/api/admin/media")({
           if (sceneId) query = query.eq("scene_id", sceneId);
           if (characterId) query = query.eq("character_id", characterId);
           if (locationId) query = query.eq("location_id", locationId);
-          if (assetType) query = query.eq("asset_type", assetType);
-          if (status) query = query.eq("status", status);
+          if (assetType) query = query.eq("asset_type", assetType as any);
+          if (status) query = query.eq("status", status as any);
           if (search) query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
 
           const from = (page - 1) * limit;

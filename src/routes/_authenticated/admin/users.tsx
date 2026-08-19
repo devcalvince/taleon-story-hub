@@ -100,7 +100,7 @@ function AdminUsersPage() {
                             <img src={u.avatar_url} alt="" className="h-full w-full object-cover" />
                           ) : (
                             <div className="flex h-full w-full items-center justify-center text-xs text-muted-foreground">
-                              {(u.display_name || u.username || "?")[0].toUpperCase()}
+                              {(u.display_name ?? u.username ?? "?")[0]?.toUpperCase()}
                             </div>
                           )}
                         </div>

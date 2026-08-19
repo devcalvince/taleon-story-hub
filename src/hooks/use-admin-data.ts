@@ -70,8 +70,19 @@ export function useAdminUsers() {
     queryFn: async () => {
       const { data: profiles } = await supabase
         .from("profiles")
-        .select("*, user_roles(role)")
+        .select("*")
         .order("created_at", { ascending: false });
+
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id, role");
+
+      const roleMap = new Map<string, string[]>();
+      for (const r of (roles ?? [])) {
+        const existing = roleMap.get(r.user_id) ?? [];
+        existing.push(r.role);
+        roleMap.set(r.user_id, existing);
+      }
 
       const enriched = await Promise.all(
         (profiles ?? []).map(async (p) => {
@@ -81,6 +92,7 @@ export function useAdminUsers() {
           ]);
           return {
             ...p,
+            user_roles: (roleMap.get(p.id) ?? []).map((role) => ({ role })),
             _follows: followsRes.count ?? 0,
             _bookmarks: bookmarksRes.count ?? 0,
           };
@@ -253,9 +265,138 @@ export function useAdminRecentStories() {
     queryFn: async () => {
       const { data } = await supabase
         .from("stories")
-        .select("id, title, slug, status, is_premium, view_count, published_at")
+        .select("id, title, slug, status, is_premium, views, published_at")
         .order("published_at", { ascending: false });
       return data ?? [];
+    },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+  });
+}
+
+// ─── Stories dropdown (lightweight) ─────────────────────────────
+export function useAdminStoriesDropdown() {
+  return useQuery({
+    queryKey: [...queryKeys.adminStories, "dropdown"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("stories")
+        .select("id, title, slug")
+        .order("title");
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+  });
+}
+
+// ─── Scenes ─────────────────────────────────────────────────────
+export function useAdminScenes() {
+  const qc = useQueryClient();
+  return {
+    query: useQuery({
+      queryKey: queryKeys.adminScenes,
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from("scenes")
+          .select("*, chapters(title, chapter_number, stories(title, slug))")
+          .order("created_at", { ascending: false });
+        if (error) throw new Error(error.message);
+        return data ?? [];
+      },
+      staleTime: 0,
+      refetchOnWindowFocus: true,
+    }),
+    invalidate: () => qc.invalidateQueries({ queryKey: queryKeys.adminScenes }),
+  };
+}
+
+// ─── Characters ─────────────────────────────────────────────────
+export function useAdminCharacters() {
+  const qc = useQueryClient();
+  return {
+    query: useQuery({
+      queryKey: queryKeys.adminCharacters,
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from("characters")
+          .select("*, stories(title, slug)")
+          .order("sort_order");
+        if (error) throw new Error(error.message);
+        return data ?? [];
+      },
+      staleTime: 0,
+      refetchOnWindowFocus: true,
+    }),
+    invalidate: () => qc.invalidateQueries({ queryKey: queryKeys.adminCharacters }),
+  };
+}
+
+// ─── Locations ──────────────────────────────────────────────────
+export function useAdminLocations() {
+  const qc = useQueryClient();
+  return {
+    query: useQuery({
+      queryKey: queryKeys.adminLocations,
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from("locations")
+          .select("*, stories(title, slug)")
+          .order("name");
+        if (error) throw new Error(error.message);
+        return data ?? [];
+      },
+      staleTime: 0,
+      refetchOnWindowFocus: true,
+    }),
+    invalidate: () => qc.invalidateQueries({ queryKey: queryKeys.adminLocations }),
+  };
+}
+
+// ─── Chapters dropdown (for media page) ─────────────────────────
+export function useAdminChaptersDropdown(storyId?: string) {
+  return useQuery({
+    queryKey: [...queryKeys.adminChapters, "dropdown", storyId],
+    queryFn: async () => {
+      let q = supabase
+        .from("chapters")
+        .select("id, title, chapter_number, story_id")
+        .order("chapter_number");
+      if (storyId) q = q.eq("story_id", storyId);
+      const { data, error } = await q;
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    enabled: true,
+  });
+}
+
+// ─── Media assets ───────────────────────────────────────────────
+export function useAdminMedia(opts: {
+  page?: number;
+  filterType?: string;
+  filterStatus?: string;
+  filterStory?: string;
+  search?: string;
+} = {}) {
+  return useQuery({
+    queryKey: [...queryKeys.adminMedia, opts],
+    queryFn: async () => {
+      let query = supabase
+        .from("media_assets")
+        .select("*, story:stories(id,title,slug)", { count: "exact" });
+      if (opts.filterType) query = query.eq("asset_type", opts.filterType as any);
+      if (opts.filterStatus) query = query.eq("status", opts.filterStatus as any);
+      if (opts.filterStory) query = query.eq("story_id", opts.filterStory);
+      if (opts.search) query = query.or(`title.ilike.%${opts.search}%`);
+      const from = ((opts.page ?? 1) - 1) * 24;
+      query = query.order("created_at", { ascending: false }).range(from, from + 23);
+      const { data, error, count } = await query;
+      if (error) throw new Error(error.message);
+      return { data: data ?? [], count: count ?? 0 };
     },
     staleTime: 0,
     refetchOnWindowFocus: true,

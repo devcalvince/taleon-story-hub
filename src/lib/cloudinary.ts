@@ -1,7 +1,7 @@
-const CLOUDINARY_ENABLED = process.env.CLOUDINARY_ENABLED === "true";
-const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || "";
-const CLOUDINARY_API_KEY = process.env.CLOUDINARY_API_KEY || "";
-const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || "";
+const CLOUDINARY_ENABLED = process.env["CLOUDINARY_ENABLED"] === "true";
+const CLOUDINARY_CLOUD_NAME = process.env["CLOUDINARY_CLOUD_NAME"] || "";
+const CLOUDINARY_API_KEY = process.env["CLOUDINARY_API_KEY"] || "";
+const CLOUDINARY_API_SECRET = process.env["CLOUDINARY_API_SECRET"] || "";
 
 export function isCloudinaryEnabled(): boolean {
   return CLOUDINARY_ENABLED && !!CLOUDINARY_CLOUD_NAME && !!CLOUDINARY_API_KEY && !!CLOUDINARY_API_SECRET;

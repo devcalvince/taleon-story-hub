@@ -91,7 +91,8 @@ END $$;
 -- ------------------------------------------------------------
 
 -- 3a. Drop every existing SELECT policy on analytics_events that grants the
---     anon role (runtime inspection — never a blind drop).
+--     anon role OR the implicit PUBLIC role (runtime inspection — never a
+--     blind drop). Policies scoped to authenticated admins are preserved.
 DO $$
 DECLARE
   pol RECORD;
@@ -102,11 +103,19 @@ BEGIN
     WHERE schemaname = 'public'
       AND tablename = 'analytics_events'
       AND cmd = 'SELECT'
-      AND 'anon' = ANY (roles::text[])
+      AND (
+        'anon' = ANY (roles::text[])
+        OR 'public' = ANY (roles::text[])
+      )
   LOOP
     EXECUTE format('DROP POLICY IF EXISTS %I ON public.analytics_events', pol.policyname);
+    RAISE NOTICE 'Dropped permissive analytics SELECT policy: %', pol.policyname;
   END LOOP;
 END $$;
+
+-- Revoke table-level SELECT from anon/public as well (a grant can permit
+-- reads even when no policy matches, and vice versa).
+REVOKE SELECT ON public.analytics_events FROM anon, PUBLIC;
 
 -- 3b. Drop any permissive UPDATE/DELETE policies granted to anon or all
 --     authenticated users (non-admins must not modify events).

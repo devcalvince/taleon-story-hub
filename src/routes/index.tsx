@@ -176,7 +176,7 @@ function ContinueReading() {
   if (!user || !rows.length) return null;
 
   return (
-    <Section title="Continue Reading" eyebrow="Pick up where you stopped" href="/continue">
+    <Section title="Continue Reading" eyebrow="Pick up where you stopped" href="/account">
       <div className="grid gap-4 md:grid-cols-3">
         {rows.map((row) => (
           <div key={row.stories?.slug} className="panel flex flex-col gap-3 p-5">

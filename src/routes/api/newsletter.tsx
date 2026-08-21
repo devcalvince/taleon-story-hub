@@ -15,33 +15,34 @@ export const Route = createFileRoute("/api/newsletter")({
           const validated = subscribeSchema.parse(body);
 
           // Upsert: if already subscribed, reactivate
-          const { error } = await supabaseAdmin
-            .from("newsletter_subscribers")
-            .upsert(
-              {
-                email: validated.email,
-                is_active: true,
-                unsubscribed_at: null,
-              },
-              { onConflict: "email" }
-            );
+          const { error } = await supabaseAdmin.from("newsletter_subscribers").upsert(
+            {
+              email: validated.email,
+              is_active: true,
+              unsubscribed_at: null,
+            },
+            { onConflict: "email" },
+          );
 
           if (error) throw error;
 
           return new Response(
-            JSON.stringify({ success: true, message: "Successfully subscribed to the newsletter!" }),
-            { status: 200, headers: { "Content-Type": "application/json" } }
+            JSON.stringify({
+              success: true,
+              message: "Successfully subscribed to the newsletter!",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
           );
         } catch (err: any) {
           if (err.name === "ZodError") {
-            return new Response(
-              JSON.stringify({ success: false, error: err.errors[0].message }),
-              { status: 400, headers: { "Content-Type": "application/json" } }
-            );
+            return new Response(JSON.stringify({ success: false, error: err.errors[0].message }), {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            });
           }
           return new Response(
             JSON.stringify({ success: false, error: "Failed to subscribe. Please try again." }),
-            { status: 500, headers: { "Content-Type": "application/json" } }
+            { status: 500, headers: { "Content-Type": "application/json" } },
           );
         }
       },
@@ -51,10 +52,10 @@ export const Route = createFileRoute("/api/newsletter")({
           const email = url.searchParams.get("email");
 
           if (!email) {
-            return new Response(
-              JSON.stringify({ success: false, error: "Email is required" }),
-              { status: 400, headers: { "Content-Type": "application/json" } }
-            );
+            return new Response(JSON.stringify({ success: false, error: "Email is required" }), {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            });
           }
 
           const { error } = await supabaseAdmin
@@ -66,13 +67,13 @@ export const Route = createFileRoute("/api/newsletter")({
 
           return new Response(
             JSON.stringify({ success: true, message: "Successfully unsubscribed." }),
-            { status: 200, headers: { "Content-Type": "application/json" } }
+            { status: 200, headers: { "Content-Type": "application/json" } },
           );
         } catch (err: any) {
-          return new Response(
-            JSON.stringify({ success: false, error: "Failed to unsubscribe." }),
-            { status: 500, headers: { "Content-Type": "application/json" } }
-          );
+          return new Response(JSON.stringify({ success: false, error: "Failed to unsubscribe." }), {
+            status: 500,
+            headers: { "Content-Type": "application/json" },
+          });
         }
       },
     },

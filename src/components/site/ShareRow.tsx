@@ -3,9 +3,19 @@ import { Check, Link2 } from "lucide-react";
 import { track } from "@/lib/analytics";
 
 const TARGETS = [
-  { label: "WhatsApp", url: (u: string, t: string) => `https://wa.me/?text=${encodeURIComponent(`${t} ${u}`)}` },
-  { label: "X", url: (u: string, t: string) => `https://x.com/intent/tweet?text=${encodeURIComponent(t)}&url=${encodeURIComponent(u)}` },
-  { label: "Facebook", url: (u: string) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(u)}` },
+  {
+    label: "WhatsApp",
+    url: (u: string, t: string) => `https://wa.me/?text=${encodeURIComponent(`${t} ${u}`)}`,
+  },
+  {
+    label: "X",
+    url: (u: string, t: string) =>
+      `https://x.com/intent/tweet?text=${encodeURIComponent(t)}&url=${encodeURIComponent(u)}`,
+  },
+  {
+    label: "Facebook",
+    url: (u: string) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(u)}`,
+  },
 ];
 
 const PROFILES = [
@@ -48,7 +58,7 @@ export function ShareRow({ title, storyId }: { title: string; storyId?: string }
         onClick={async () => {
           await navigator.clipboard.writeText(url);
           setCopied(true);
-          track("share", { storyId, metadata: { target: "copy_link" } });
+          track("share", { storyId, metadata: { target: "copy_link" } })
           setTimeout(() => setCopied(false), 2000);
         }}
         className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-muted-foreground hover:text-foreground"

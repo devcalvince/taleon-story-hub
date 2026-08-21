@@ -42,7 +42,10 @@ export async function requireAdmin(request: Request): Promise<AdminUser> {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 
-  const { data: { user }, error: authErr } = await supabase.auth.getUser(token);
+  const {
+    data: { user },
+    error: authErr,
+  } = await supabase.auth.getUser(token);
   if (authErr || !user) {
     throw new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,

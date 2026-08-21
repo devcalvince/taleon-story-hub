@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdmin } from "@/lib/admin-auth.server";
-import { uploadToStorage, buildStoragePath, sanitizeFilename, ensureBucket } from "@/lib/storage";
+import { uploadToStorage, buildStoragePath, sanitizeFilename, ensureBucket, ensureBuckets } from "@/lib/storage";
 import { importExternalImage, sanitizeImportFilename } from "@/lib/image-import";
 
 export const Route = createFileRoute("/api/admin/media")({
@@ -16,24 +16,26 @@ export const Route = createFileRoute("/api/admin/media")({
           if (action === "upload") {
             const file = formData.get("file") as File;
             const storyId = formData.get("storyId") as string;
-            const assetType = formData.get("assetType") as string || "other";
-            const title = formData.get("title") as string || file.name;
-            const chapterId = formData.get("chapterId") as string || null;
-            const sceneId = formData.get("sceneId") as string || null;
-            const characterId = formData.get("characterId") as string || null;
-            const locationId = formData.get("locationId") as string || null;
-            const description = formData.get("description") as string || null;
-            const prompt = formData.get("prompt") as string || null;
+            const assetType = (formData.get("assetType") as string) || "other";
+            const title = (formData.get("title") as string) || file.name;
+            const chapterId = (formData.get("chapterId") as string) || null;
+            const sceneId = (formData.get("sceneId") as string) || null;
+            const characterId = (formData.get("characterId") as string) || null;
+            const locationId = (formData.get("locationId") as string) || null;
+            const description = (formData.get("description") as string) || null;
+            const prompt = (formData.get("prompt") as string) || null;
 
             if (!file || !storyId) {
-              return new Response(JSON.stringify({ error: "file and storyId required" }), { status: 400 });
+              return new Response(JSON.stringify({ error: "file and storyId required" }), {
+                status: 400,
+              });
             }
 
             const buffer = await file.arrayBuffer();
             const safe = sanitizeFilename(file.name);
             const path = buildStoragePath({ storyId, kind: "uploads", filename: safe });
-
-            await ensureBucket();
+            const bucket = "story-assets";
+            await ensureBucket(bucket);
             const upload = await uploadToStorage(path, buffer, file.type);
             if ("error" in upload) {
               return new Response(JSON.stringify({ error: upload.error }), { status: 500 });
@@ -71,17 +73,19 @@ export const Route = createFileRoute("/api/admin/media")({
           if (action === "import_url") {
             const url = formData.get("url") as string;
             const storyId = formData.get("storyId") as string;
-            const assetType = formData.get("assetType") as string || "other";
-            const title = formData.get("title") as string || "Imported image";
-            const chapterId = formData.get("chapterId") as string || null;
-            const sceneId = formData.get("sceneId") as string || null;
-            const characterId = formData.get("characterId") as string || null;
-            const locationId = formData.get("locationId") as string || null;
-            const description = formData.get("description") as string || null;
-            const prompt = formData.get("prompt") as string || null;
+            const assetType = (formData.get("assetType") as string) || "other";
+            const title = (formData.get("title") as string) || "Imported image";
+            const chapterId = (formData.get("chapterId") as string) || null;
+            const sceneId = (formData.get("sceneId") as string) || null;
+            const characterId = (formData.get("characterId") as string) || null;
+            const locationId = (formData.get("locationId") as string) || null;
+            const description = (formData.get("description") as string) || null;
+            const prompt = (formData.get("prompt") as string) || null;
 
             if (!url || !storyId) {
-              return new Response(JSON.stringify({ error: "url and storyId required" }), { status: 400 });
+              return new Response(JSON.stringify({ error: "url and storyId required" }), {
+                status: 400,
+              });
             }
 
             const imported = await importExternalImage(url);
@@ -92,7 +96,7 @@ export const Route = createFileRoute("/api/admin/media")({
             const filename = sanitizeImportFilename(url, imported.format);
             const path = buildStoragePath({ storyId, kind: "uploads", filename });
 
-            await ensureBucket();
+            await ensureBucket("story-assets");
             const upload = await uploadToStorage(path, imported.data, imported.contentType);
             if ("error" in upload) {
               return new Response(JSON.stringify({ error: upload.error }), { status: 500 });
@@ -135,7 +139,9 @@ export const Route = createFileRoute("/api/admin/media")({
           return new Response(JSON.stringify({ error: "Unknown action" }), { status: 400 });
         } catch (e: any) {
           if (e instanceof Response) return e;
-          return new Response(JSON.stringify({ error: e.message || "Internal error" }), { status: 500 });
+          return new Response(JSON.stringify({ error: e.message || "Internal error" }), {
+            status: 500,
+          });
         }
       },
 

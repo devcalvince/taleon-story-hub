@@ -35,7 +35,8 @@ export const Route = createFileRoute("/stories")({
       { title: "All Stories | Taleon Media" },
       {
         name: "description",
-        content: "Browse the full Taleon catalogue — original serialized stories, audiobooks and story videos.",
+        content:
+          "Browse the full Taleon catalogue — original serialized stories, audiobooks and story videos.",
       },
       { property: "og:title", content: "All Stories | Taleon Media" },
       { property: "og:description", content: "Browse every Taleon original story." },
@@ -56,7 +57,11 @@ function StoriesPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Catalogue" title="Stories" lede="Every world Taleon has opened so far." />
+      <PageHeader
+        eyebrow="Catalogue"
+        title="Stories"
+        lede="Every world Taleon has opened so far."
+      />
 
       <div className="mx-auto w-full max-w-7xl px-4 sm:px-6">
         <div className="flex flex-col gap-4 border-y border-border py-4 lg:flex-row lg:items-center">
@@ -101,7 +106,9 @@ function StoriesPage() {
         {stories.length === 0 ? (
           <div className="panel px-6 py-16 text-center">
             <h2 className="text-lg">No stories match those filters</h2>
-            <p className="mt-2 text-sm text-muted-foreground">Try another genre, or browse everything.</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Try another genre, or browse everything.
+            </p>
             <Link
               to="/stories"
               search={{}}

@@ -16,10 +16,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/genres")({
   head: () => ({
-    meta: [
-      { title: "Manage Genres | Taleon Admin" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Manage Genres | Taleon Admin" }, { name: "robots", content: "noindex" }],
   }),
   component: AdminGenresPage,
 });
@@ -51,7 +48,10 @@ function AdminGenresPage() {
   const [formSortOrder, setFormSortOrder] = useState(0);
 
   function generateSlug(name: string) {
-    return name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return name
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
   }
 
   function openCreate() {
@@ -75,7 +75,13 @@ function AdminGenresPage() {
   }
 
   const createMutation = useMutation({
-    mutationFn: async (genreData: { name: string; slug: string; description: string | null; accent: string; sort_order: number }) => {
+    mutationFn: async (genreData: {
+      name: string;
+      slug: string;
+      description: string | null;
+      accent: string;
+      sort_order: number;
+    }) => {
       const { error } = await supabase.from("genres").insert(genreData);
       if (error) throw new Error(error.message);
     },
@@ -90,7 +96,17 @@ function AdminGenresPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ id, ...genreData }: { id: string; name: string; slug: string; description: string | null; accent: string; sort_order: number }) => {
+    mutationFn: async ({
+      id,
+      ...genreData
+    }: {
+      id: string;
+      name: string;
+      slug: string;
+      description: string | null;
+      accent: string;
+      sort_order: number;
+    }) => {
       const { error } = await supabase.from("genres").update(genreData).eq("id", id);
       if (error) throw new Error(error.message);
     },
@@ -147,12 +163,19 @@ function AdminGenresPage() {
     deleteMutation.mutate(id);
   }
 
-  if (loading) return <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">Loading…</div>;
+  if (loading)
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">
+        Loading…
+      </div>
+    );
   if (!isAdmin) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
         <EmptyState title="Admins only" body="This area is restricted to Taleon administrators.">
-          <Link to="/account" className="rounded-md border border-border px-5 py-2.5 text-sm">Back to my library</Link>
+          <Link to="/account" className="rounded-md border border-border px-5 py-2.5 text-sm">
+            Back to my library
+          </Link>
         </EmptyState>
       </div>
     );
@@ -183,14 +206,22 @@ function AdminGenresPage() {
                       <h3 className="font-medium">{g.name}</h3>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">/{g.slug}</p>
-                    {g.description && <p className="mt-2 text-sm text-muted-foreground">{g.description}</p>}
+                    {g.description && (
+                      <p className="mt-2 text-sm text-muted-foreground">{g.description}</p>
+                    )}
                     <p className="mt-2 text-xs text-muted-foreground">{g.story_count} stories</p>
                   </div>
                   <div className="flex items-center gap-1">
-                    <button onClick={() => openEdit(g)} className="p-1 text-muted-foreground hover:text-gold">
+                    <button
+                      onClick={() => openEdit(g)}
+                      className="p-1 text-muted-foreground hover:text-gold"
+                    >
                       <Pencil className="h-4 w-4" />
                     </button>
-                    <button onClick={() => deleteGenre(g.id)} className="p-1 text-muted-foreground hover:text-red-500">
+                    <button
+                      onClick={() => deleteGenre(g.id)}
+                      className="p-1 text-muted-foreground hover:text-red-500"
+                    >
                       <Trash2 className="h-4 w-4" />
                     </button>
                   </div>
@@ -208,31 +239,62 @@ function AdminGenresPage() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Name *</label>
-                <Input value={formName} onChange={(e) => { setFormName(e.target.value); if (!editingGenre) setFormSlug(generateSlug(e.target.value)); }} placeholder="Genre name" />
+                <Input
+                  value={formName}
+                  onChange={(e) => {
+                    setFormName(e.target.value);
+                    if (!editingGenre) setFormSlug(generateSlug(e.target.value));
+                  }}
+                  placeholder="Genre name"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Slug</label>
-                <Input value={formSlug} onChange={(e) => setFormSlug(e.target.value)} placeholder="auto-generated" />
+                <Input
+                  value={formSlug}
+                  onChange={(e) => setFormSlug(e.target.value)}
+                  placeholder="auto-generated"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Description</label>
-                <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} rows={2} placeholder="Brief description" />
+                <Textarea
+                  value={formDescription}
+                  onChange={(e) => setFormDescription(e.target.value)}
+                  rows={2}
+                  placeholder="Brief description"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Accent Color</label>
                   <div className="flex items-center gap-2">
-                    <input type="color" value={formAccent} onChange={(e) => setFormAccent(e.target.value)} className="h-8 w-8 rounded border-0" />
-                    <Input value={formAccent} onChange={(e) => setFormAccent(e.target.value)} className="flex-1" />
+                    <input
+                      type="color"
+                      value={formAccent}
+                      onChange={(e) => setFormAccent(e.target.value)}
+                      className="h-8 w-8 rounded border-0"
+                    />
+                    <Input
+                      value={formAccent}
+                      onChange={(e) => setFormAccent(e.target.value)}
+                      className="flex-1"
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Sort Order</label>
-                  <Input type="number" value={formSortOrder} onChange={(e) => setFormSortOrder(parseInt(e.target.value))} />
+                  <Input
+                    type="number"
+                    value={formSortOrder}
+                    onChange={(e) => setFormSortOrder(parseInt(e.target.value))}
+                  />
                 </div>
               </div>
               <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                  Cancel
+                </Button>
                 <Button onClick={handleSave} disabled={isSaving}>
                   {isSaving ? "Saving..." : editingGenre ? "Update" : "Create"}
                 </Button>

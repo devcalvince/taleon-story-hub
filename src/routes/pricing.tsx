@@ -6,7 +6,12 @@ const PLANS = [
   {
     name: "Free",
     tagline: "Start reading today",
-    features: ["Free stories and chapters", "Limited audio", "Supported by advertising", "Save and follow stories"],
+    features: [
+      "Free stories and chapters",
+      "Limited audio",
+      "Supported by advertising",
+      "Save and follow stories",
+    ],
     highlight: false,
   },
   {
@@ -18,7 +23,12 @@ const PLANS = [
   {
     name: "Taleon Premium",
     tagline: "For the deepest fans",
-    features: ["Everything in Plus", "Exclusive audiobooks", "Early releases", "Special editions and extras"],
+    features: [
+      "Everything in Plus",
+      "Exclusive audiobooks",
+      "Early releases",
+      "Special editions and extras",
+    ],
     highlight: false,
   },
 ];
@@ -27,9 +37,15 @@ export const Route = createFileRoute("/pricing")({
   head: () => ({
     meta: [
       { title: "Membership | Taleon Media" },
-      { name: "description", content: "Taleon membership tiers: Free, Taleon Plus and Taleon Premium." },
+      {
+        name: "description",
+        content: "Taleon membership tiers: Free, Taleon Plus and Taleon Premium.",
+      },
       { property: "og:title", content: "Membership | Taleon Media" },
-      { property: "og:description", content: "Read ad-free, hear every narration and get chapters first." },
+      {
+        property: "og:description",
+        content: "Read ad-free, hear every narration and get chapters first.",
+      },
       { property: "og:url", content: "/pricing" },
     ],
     links: [{ rel: "canonical", href: "/pricing" }],

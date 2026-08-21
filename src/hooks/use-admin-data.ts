@@ -33,7 +33,7 @@ export function useAdminGenres() {
               .select("id", { count: "exact", head: true })
               .eq("genre_id", g.id);
             return { ...g, story_count: count ?? 0 };
-          })
+          }),
         );
         return enriched;
       },
@@ -73,12 +73,10 @@ export function useAdminUsers() {
         .select("*")
         .order("created_at", { ascending: false });
 
-      const { data: roles } = await supabase
-        .from("user_roles")
-        .select("user_id, role");
+      const { data: roles } = await supabase.from("user_roles").select("user_id, role");
 
       const roleMap = new Map<string, string[]>();
-      for (const r of (roles ?? [])) {
+      for (const r of roles ?? []) {
         const existing = roleMap.get(r.user_id) ?? [];
         existing.push(r.role);
         roleMap.set(r.user_id, existing);
@@ -87,8 +85,14 @@ export function useAdminUsers() {
       const enriched = await Promise.all(
         (profiles ?? []).map(async (p) => {
           const [followsRes, bookmarksRes] = await Promise.all([
-            supabase.from("follows").select("id", { count: "exact", head: true }).eq("user_id", p.id),
-            supabase.from("bookmarks").select("id", { count: "exact", head: true }).eq("user_id", p.id),
+            supabase
+              .from("follows")
+              .select("id", { count: "exact", head: true })
+              .eq("user_id", p.id),
+            supabase
+              .from("bookmarks")
+              .select("id", { count: "exact", head: true })
+              .eq("user_id", p.id),
           ]);
           return {
             ...p,
@@ -96,7 +100,7 @@ export function useAdminUsers() {
             _follows: followsRes.count ?? 0,
             _bookmarks: bookmarksRes.count ?? 0,
           };
-        })
+        }),
       );
       return enriched;
     },
@@ -160,22 +164,32 @@ export function useAdminAnalytics() {
       const allEvents = eventsRes.data ?? [];
       const eventNames = new Set(allEvents.map((e) => e.event_name));
 
-      // Support both old and new event names
-      const isStoryView = (e: any) => e.event_name === "story_view" || e.event_name === "page_view";
-      const isChapterStart = (e: any) => e.event_name === "chapter_started" || e.event_name === "chapter_start";
-      const isChapterComplete = (e: any) => e.event_name === "chapter_completed" || e.event_name === "chapter_complete";
+      // Filter out admin and system events for public metrics
+      const publicEvents = allEvents.filter((e: any) => e.actor_type !== "admin" && e.actor_type !== "system");
 
-      const views = allEvents.filter(isStoryView).length;
-      const chapterStarts = allEvents.filter(isChapterStart).length;
-      const chapterCompletions = allEvents.filter(isChapterComplete).length;
-      const audioPlays = allEvents.filter((e: any) => e.event_name === "audio_started" || e.event_name === "audio_play").length;
-      const videoPlays = allEvents.filter((e: any) => e.event_name === "video_started" || e.event_name === "video_play").length;
-      const searches = allEvents.filter((e: any) => e.event_name === "search").length;
-      const shares = allEvents.filter((e: any) => e.event_name === "share").length;
-      const signups = allEvents.filter((e: any) => e.event_name === "signup").length;
+      // Support both old and new event names (backward compatibility)
+      const isStoryView = (e: any) => e.event_name === "story_view" || e.event_name === "page_view";
+      const isChapterStart = (e: any) =>
+        e.event_name === "chapter_started" || e.event_name === "chapter_start";
+      const isChapterComplete = (e: any) =>
+        e.event_name === "chapter_completed" || e.event_name === "chapter_complete";
+
+      const views = publicEvents.filter(isStoryView).length;
+      const chapterStarts = publicEvents.filter(isChapterStart).length;
+      const chapterCompletions = publicEvents.filter(isChapterComplete).length;
+      const audioPlays = publicEvents.filter(
+        (e: any) => e.event_name === "audio_started" || e.event_name === "audio_play",
+      ).length;
+      const videoPlays = publicEvents.filter(
+        (e: any) => e.event_name === "video_started" || e.event_name === "video_play",
+      ).length;
+      const searches = publicEvents.filter((e: any) => e.event_name === "search").length;
+      const shares = publicEvents.filter((e: any) => e.event_name === "share").length;
+      const signups = publicEvents.filter((e: any) => e.event_name === "signup").length;
 
       const stats = {
-        totalVisitors: allEvents.filter((e: any) => e.anonymous_id).length + (profilesRes.count ?? 0),
+        totalVisitors:
+          publicEvents.filter((e: any) => e.anonymous_id).length + (profilesRes.count ?? 0),
         totalStoryViews: views,
         totalChapterStarts: chapterStarts,
         totalChapterReads: chapterCompletions,
@@ -198,51 +212,87 @@ export function useAdminAnalytics() {
         d.setDate(d.getDate() - i);
         dailyMap.set(d.toISOString().slice(0, 10), 0);
       }
-      for (const e of allEvents) {
+      for (const e of publicEvents) {
         const day = e.created_at?.slice(0, 10);
         if (day && dailyMap.has(day)) {
           dailyMap.set(day, (dailyMap.get(day) ?? 0) + 1);
         }
       }
-      const dailyVisitors = Array.from(dailyMap.entries()).map(([date, visitors]) => ({ date: date.slice(5), visitors }));
+      const dailyVisitors = Array.from(dailyMap.entries()).map(([date, visitors]) => ({
+        date: date.slice(5),
+        visitors,
+      }));
 
       // Top stories by views and completions
-      const storyStats = new Map<string, { title: string; slug: string; views: number; reads: number; starts: number }>();
-      for (const e of allEvents) {
+      const storyStats = new Map<
+        string,
+        { title: string; slug: string; views: number; reads: number; starts: number }
+      >();
+      for (const e of publicEvents) {
         if (!e.story_id) continue;
         if (e.event_name === "story_view") {
-          const existing = storyStats.get(e.story_id) ?? { title: "", slug: "", views: 0, reads: 0, starts: 0 };
+          const existing = storyStats.get(e.story_id) ?? {
+            title: "",
+            slug: "",
+            views: 0,
+            reads: 0,
+            starts: 0,
+          };
           existing.views++;
           storyStats.set(e.story_id, existing);
         }
         if (isChapterStart(e)) {
-          const existing = storyStats.get(e.story_id) ?? { title: "", slug: "", views: 0, reads: 0, starts: 0 };
+          const existing = storyStats.get(e.story_id) ?? {
+            title: "",
+            slug: "",
+            views: 0,
+            reads: 0,
+            starts: 0,
+          };
           existing.starts++;
           storyStats.set(e.story_id, existing);
         }
         if (isChapterComplete(e)) {
-          const existing = storyStats.get(e.story_id) ?? { title: "", slug: "", views: 0, reads: 0, starts: 0 };
+          const existing = storyStats.get(e.story_id) ?? {
+            title: "",
+            slug: "",
+            views: 0,
+            reads: 0,
+            starts: 0,
+          };
           existing.reads++;
           storyStats.set(e.story_id, existing);
         }
       }
       const storyIds = Array.from(storyStats.keys());
       if (storyIds.length) {
-        const { data: storyData } = await supabase.from("stories").select("id, title, slug").in("id", storyIds);
+        const { data: storyData } = await supabase
+          .from("stories")
+          .select("id, title, slug")
+          .in("id", storyIds);
         for (const s of storyData ?? []) {
           const existing = storyStats.get(s.id);
-          if (existing) { existing.title = s.title; existing.slug = s.slug; }
+          if (existing) {
+            existing.title = s.title;
+            existing.slug = s.slug;
+          }
         }
       }
       const topStories = Array.from(storyStats.values())
-        .map(s => ({ ...s, completionRate: s.starts > 0 ? Math.round((s.reads / s.starts) * 100) : 0 }))
+        .map((s) => ({
+          ...s,
+          completionRate: s.starts > 0 ? Math.round((s.reads / s.starts) * 100) : 0,
+        }))
         .sort((a, b) => b.starts - a.starts)
         .slice(0, 8);
 
       // Chapter funnel (last 30 days)
-      const funnelEvents = allEvents.filter((e: any) =>
-        e.event_name === "chapter_25" || e.event_name === "chapter_50" ||
-        e.event_name === "chapter_75" || isChapterComplete(e)
+      const funnelEvents = publicEvents.filter(
+        (e: any) =>
+          e.event_name === "chapter_25" ||
+          e.event_name === "chapter_50" ||
+          e.event_name === "chapter_75" ||
+          isChapterComplete(e),
       );
       const funnelCounts = {
         started: chapterStarts,
@@ -253,8 +303,11 @@ export function useAdminAnalytics() {
       };
 
       // Attribution breakdown
-      const attributionMap = new Map<string, { visits: number; starts: number; completions: number }>();
-      for (const e of allEvents) {
+      const attributionMap = new Map<
+        string,
+        { visits: number; starts: number; completions: number }
+      >();
+      for (const e of publicEvents) {
         const source = (e as any).attribution?.source || "direct";
         const entry = attributionMap.get(source) ?? { visits: 0, starts: 0, completions: 0 };
         entry.visits++;
@@ -268,7 +321,7 @@ export function useAdminAnalytics() {
 
       // Event breakdown
       const eventCounts = new Map<string, number>();
-      for (const e of allEvents) {
+      for (const e of publicEvents) {
         eventCounts.set(e.event_name, (eventCounts.get(e.event_name) ?? 0) + 1);
       }
       const eventBreakdown = Array.from(eventCounts.entries())
@@ -277,7 +330,7 @@ export function useAdminAnalytics() {
         .slice(0, 12);
 
       // Recent events for live feed
-      const recentEvents = allEvents.slice(0, 50);
+      const recentEvents = publicEvents.slice(0, 50);
 
       return {
         stats,
@@ -431,13 +484,15 @@ export function useAdminChaptersDropdown(storyId?: string) {
 }
 
 // ─── Media assets ───────────────────────────────────────────────
-export function useAdminMedia(opts: {
-  page?: number;
-  filterType?: string;
-  filterStatus?: string;
-  filterStory?: string;
-  search?: string;
-} = {}) {
+export function useAdminMedia(
+  opts: {
+    page?: number;
+    filterType?: string;
+    filterStatus?: string;
+    filterStory?: string;
+    search?: string;
+  } = {},
+) {
   return useQuery({
     queryKey: [...queryKeys.adminMedia, opts],
     queryFn: async () => {

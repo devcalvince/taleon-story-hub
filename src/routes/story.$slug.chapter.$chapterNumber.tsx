@@ -17,7 +17,12 @@ export const Route = createFileRoute("/story/$slug/chapter/$chapterNumber")({
   },
   head: ({ params, loaderData }) => {
     if (!loaderData) {
-      return { meta: [{ title: "Chapter unavailable | Taleon Media" }, { name: "robots", content: "noindex" }] };
+      return {
+        meta: [
+          { title: "Chapter unavailable | Taleon Media" },
+          { name: "robots", content: "noindex" },
+        ],
+      };
     }
     const { story, chapter } = loaderData;
     const title = `${story.title} — Chapter ${chapter.chapter_number} | Taleon Media`;
@@ -40,6 +45,7 @@ export const Route = createFileRoute("/story/$slug/chapter/$chapterNumber")({
 
 function ChapterPage() {
   const { story, chapter, prev, next, total } = Route.useLoaderData();
+  const params = Route.useParams();
   const { user } = useSession();
   const [fontSize, setFontSize] = useState(18);
   const [wide, setWide] = useState(false);
@@ -48,8 +54,29 @@ function ChapterPage() {
   const [bookmarked, setBookmarked] = useState(false);
 
   useEffect(() => {
-    track("chapter_view", { storyId: story.id, chapterId: chapter.id });
-    track("chapter_start", { storyId: story.id, chapterId: chapter.id });
+    track("chapter_view", {
+      storyId: story.id,
+      chapterId: chapter.id,
+      metadata: {
+        storySlug: params.slug,
+        storyTitle: story.title,
+        storyGenre: story.genre ?? "",
+        chapterNumber: chapter.chapter_number,
+      },
+    });
+    // Fires exactly once per chapter page load; milestone tracking below
+    // only emits 25/50/75/100.
+    track("chapter_start", {
+      storyId: story.id,
+      chapterId: chapter.id,
+      funnelStage: "started",
+      metadata: {
+        storySlug: params.slug,
+        storyTitle: story.title,
+        storyGenre: story.genre ?? "",
+        chapterNumber: chapter.chapter_number,
+      },
+    });
   }, [story.id, chapter.id]);
 
   const [funnelMilestones, setFunnelMilestones] = useState<Set<number>>(new Set());
@@ -71,6 +98,9 @@ function ChapterPage() {
             percent: milestone,
             chapterNumber: chapter.chapter_number,
             wordLength: chapter.word_count,
+            storySlug: params.slug,
+            storyTitle: story.title,
+            storyGenre: story.genre ?? "",
           });
         }
       }
@@ -81,6 +111,8 @@ function ChapterPage() {
   }, [chapter.id, story.id, funnelMilestones]);
 
   // Save reading position for signed-in members.
+  // (chapter_complete analytics is emitted once by the 100% milestone above —
+  // this effect only persists reading state, it never tracks events.)
   useEffect(() => {
     if (!user || progress < 5) return;
     const timer = setTimeout(() => {
@@ -93,21 +125,29 @@ function ChapterPage() {
         completed: progress > 92,
         updated_at: new Date().toISOString(),
       });
-      if (progress > 92) track("chapter_complete", { storyId: story.id, chapterId: chapter.id });
     }, 4000);
     return () => clearTimeout(timer);
   }, [user, progress, story.id, chapter.id, chapter.chapter_number]);
 
-  const paragraphs = String(chapter.content).split(/\n\s*\n/).filter(Boolean);
+  const paragraphs = String(chapter.content)
+    .split(/\n\s*\n/)
+    .filter(Boolean);
 
   return (
     <div className={light ? "reader-light bg-background text-foreground" : ""}>
       <div className="fixed inset-x-0 top-16 z-40 h-0.5 bg-transparent" aria-hidden>
-        <div className="h-full bg-gold transition-[width] duration-150" style={{ width: `${progress}%` }} />
+        <div
+          className="h-full bg-gold transition-[width] duration-150"
+          style={{ width: `${progress}%` }}
+        />
       </div>
 
       <div className={`mx-auto px-4 pt-10 pb-24 sm:px-6 ${wide ? "max-w-4xl" : "max-w-2xl"}`}>
-        <Link to="/story/$slug" params={{ slug: story.slug }} className="eyebrow hover:text-foreground">
+        <Link
+          to="/story/$slug"
+          params={{ slug: story.slug }}
+          className="eyebrow hover:text-foreground"
+        >
           ← {story.title}
         </Link>
 
@@ -120,11 +160,19 @@ function ChapterPage() {
 
         <div className="mt-6 flex flex-wrap items-center gap-2 text-xs">
           <div className="flex items-center gap-1 rounded-md border border-border p-1">
-            <button onClick={() => setFontSize((s) => Math.max(15, s - 1))} aria-label="Decrease font size" className="p-1.5">
+            <button
+              onClick={() => setFontSize((s) => Math.max(15, s - 1))}
+              aria-label="Decrease font size"
+              className="p-1.5"
+            >
               <Minus className="size-3.5" />
             </button>
             <span className="px-1 text-muted-foreground">Aa</span>
-            <button onClick={() => setFontSize((s) => Math.min(26, s + 1))} aria-label="Increase font size" className="p-1.5">
+            <button
+              onClick={() => setFontSize((s) => Math.min(26, s + 1))}
+              aria-label="Increase font size"
+              className="p-1.5"
+            >
               <Plus className="size-3.5" />
             </button>
           </div>
@@ -174,10 +222,7 @@ function ChapterPage() {
             </Link>
           </div>
         ) : (
-          <article
-            className="mt-10 space-y-6 leading-[1.85]"
-            style={{ fontSize: `${fontSize}px` }}
-          >
+          <article className="mt-10 space-y-6 leading-[1.85]" style={{ fontSize: `${fontSize}px` }}>
             {paragraphs.map((p, i) => (
               <p key={i}>{p}</p>
             ))}
@@ -192,16 +237,25 @@ function ChapterPage() {
             <Headphones className="size-4" /> Listen to this chapter
           </a>
         ) : (
-          <Link to="/audio" className="mt-10 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <Link
+            to="/audio"
+            className="mt-10 flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+          >
             <Headphones className="size-4" /> Narration coming soon — browse the audio library
           </Link>
         )}
 
         <div className="mt-10">
-          <ShareRow title={`${story.title} — Chapter ${chapter.chapter_number}`} storyId={story.id} />
+          <ShareRow
+            title={`${story.title} — Chapter ${chapter.chapter_number}`}
+            storyId={story.id}
+          />
         </div>
 
-        <nav className="mt-12 flex items-center justify-between border-t border-border pt-8" aria-label="Chapter navigation">
+        <nav
+          className="mt-12 flex items-center justify-between border-t border-border pt-8"
+          aria-label="Chapter navigation"
+        >
           {prev ? (
             <Link
               to="/story/$slug/chapter/$chapterNumber"
@@ -222,7 +276,11 @@ function ChapterPage() {
               Continue reading <ArrowRight className="size-4" />
             </Link>
           ) : (
-            <Link to="/story/$slug" params={{ slug: story.slug }} className="text-sm text-muted-foreground hover:text-foreground">
+            <Link
+              to="/story/$slug"
+              params={{ slug: story.slug }}
+              className="text-sm text-muted-foreground hover:text-foreground"
+            >
               Back to story
             </Link>
           )}

@@ -59,7 +59,9 @@ function Home() {
               params={{ slug: s.slug }}
               className="flex items-center gap-4 rounded-lg border border-border bg-surface-2/60 p-4 transition-colors hover:border-border-strong"
             >
-              <span className="font-display text-2xl text-gold">{String(i + 1).padStart(2, "0")}</span>
+              <span className="font-display text-2xl text-gold">
+                {String(i + 1).padStart(2, "0")}
+              </span>
               <span className="min-w-0">
                 <span className="block truncate text-sm font-medium">{s.title}</span>
                 <span className="block truncate text-xs text-muted-foreground">
@@ -112,7 +114,11 @@ function Hero({ story }: { story: StorySummary & { description?: string } }) {
         height={1088}
         className="absolute inset-0 size-full object-cover opacity-60"
       />
-      <div className="absolute inset-0" style={{ background: "var(--gradient-veil)" }} aria-hidden />
+      <div
+        className="absolute inset-0"
+        style={{ background: "var(--gradient-veil)" }}
+        aria-hidden
+      />
       <div className="relative mx-auto flex min-h-[78vh] max-w-7xl flex-col justify-end px-4 pt-28 pb-16 sm:px-6 md:min-h-[86vh]">
         <p className="eyebrow">Taleon Originals</p>
         <h1 className="mt-3 max-w-3xl text-4xl leading-[1.05] tracking-wide sm:text-6xl md:text-7xl">
@@ -121,7 +127,9 @@ function Hero({ story }: { story: StorySummary & { description?: string } }) {
         <p className="mt-4 text-xs tracking-[0.2em] text-gold uppercase">
           {(story.genres ?? []).map((g) => g.name).join(" • ")}
         </p>
-        <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">{story.short_description}</p>
+        <p className="mt-5 max-w-xl text-base text-muted-foreground sm:text-lg">
+          {story.short_description}
+        </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             to="/story/$slug/chapter/$chapterNumber"
@@ -175,7 +183,10 @@ function ContinueReading() {
             <p className="font-display text-lg">{row.stories?.title}</p>
             <p className="text-sm text-muted-foreground">Chapter {row.chapter_number}</p>
             <div className="h-1 w-full overflow-hidden rounded-full bg-surface">
-              <div className="h-full bg-gold" style={{ width: `${Math.min(100, Number(row.percent) || 0)}%` }} />
+              <div
+                className="h-full bg-gold"
+                style={{ width: `${Math.min(100, Number(row.percent) || 0)}%` }}
+              />
             </div>
             <Link
               to="/story/$slug/chapter/$chapterNumber"
@@ -193,16 +204,35 @@ function ContinueReading() {
 
 function Formats() {
   const items = [
-    { icon: BookOpen, title: "Read", body: "Serialized stories and novels, released chapter by chapter.", to: "/stories" },
-    { icon: Headphones, title: "Listen", body: "Narrated chapters, audiobooks and audio drama.", to: "/audio" },
-    { icon: Play, title: "Watch", body: "Cinematic story videos, trailers and adaptations.", to: "/watch" },
+    {
+      icon: BookOpen,
+      title: "Read",
+      body: "Serialized stories and novels, released chapter by chapter.",
+      to: "/stories",
+    },
+    {
+      icon: Headphones,
+      title: "Listen",
+      body: "Narrated chapters, audiobooks and audio drama.",
+      to: "/audio",
+    },
+    {
+      icon: Play,
+      title: "Watch",
+      body: "Cinematic story videos, trailers and adaptations.",
+      to: "/watch",
+    },
   ] as const;
 
   return (
     <section className="mx-auto w-full max-w-7xl px-4 py-16 sm:px-6">
       <div className="grid gap-px overflow-hidden rounded-lg border border-border bg-border md:grid-cols-3">
         {items.map((item) => (
-          <Link key={item.title} to={item.to} className="group bg-surface-2 p-8 transition-colors hover:bg-surface">
+          <Link
+            key={item.title}
+            to={item.to}
+            className="group bg-surface-2 p-8 transition-colors hover:bg-surface"
+          >
             <item.icon className="size-5 text-gold" aria-hidden />
             <h2 className="mt-5 text-2xl tracking-[0.2em] uppercase">{item.title}</h2>
             <p className="mt-3 max-w-xs text-sm text-muted-foreground">{item.body}</p>
@@ -237,6 +267,37 @@ function Originals({ stories }: { stories: StorySummary[] }) {
 function Newsletter() {
   const [email, setEmail] = useState("");
   const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  async function subscribe(e: React.FormEvent) {
+    e.preventDefault();
+    const mail = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail)) return;
+    setBusy(true);
+    setError("");
+    try {
+      const res = await fetch("/api/newsletter", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: mail }),
+      });
+      const data = (await res.json()) as { success: boolean; error?: string };
+      if (!res.ok || !data.success) {
+        setError(data.error ?? "Subscription failed. Please try again.");
+        return;
+      }
+      // Fired only after the subscription succeeds. No PII is sent.
+      track("newsletter_signup", {
+        metadata: { formType: "email", formLocation: "homepage" },
+      });
+      setDone(true);
+    } catch {
+      setError("Subscription failed. Please try again.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <section className="mx-auto w-full max-w-3xl px-4 py-20 text-center sm:px-6">
@@ -244,14 +305,7 @@ function Newsletter() {
       <p className="mt-3 text-sm text-muted-foreground">
         Join Taleon for new chapters, narrated releases and story videos.
       </p>
-      <form
-        className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row"
-        onSubmit={(e) => {
-          e.preventDefault();
-          if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) return;
-          setDone(true);
-        }}
-      >
+      <form className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row" onSubmit={subscribe}>
         <label htmlFor="newsletter-email" className="sr-only">
           Email address
         </label>
@@ -265,10 +319,14 @@ function Newsletter() {
           placeholder="you@example.com"
           className="w-full rounded-md border border-border bg-surface-2 px-4 py-3 text-sm outline-none focus:border-border-strong"
         />
-        <button className="rounded-md bg-gold px-6 py-3 text-sm font-medium tracking-wider text-gold-foreground uppercase hover:opacity-90">
-          Join Taleon
+        <button
+          disabled={busy}
+          className="rounded-md bg-gold px-6 py-3 text-sm font-medium tracking-wider text-gold-foreground uppercase hover:opacity-90 disabled:opacity-60"
+        >
+          {busy ? "Joining…" : "Join Taleon"}
         </button>
       </form>
+      {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
       {done && <p className="mt-4 text-sm text-gold">You're on the list. Welcome to Taleon.</p>}
     </section>
   );

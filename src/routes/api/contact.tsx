@@ -17,31 +17,32 @@ export const Route = createFileRoute("/api/contact")({
           const body = await request.json();
           const validated = contactSchema.parse(body);
 
-          const { error } = await supabaseAdmin
-            .from("contact_submissions")
-            .insert({
-              name: validated.name,
-              email: validated.email,
-              subject: validated.subject || null,
-              message: validated.message,
-            });
+          const { error } = await supabaseAdmin.from("contact_submissions").insert({
+            name: validated.name,
+            email: validated.email,
+            subject: validated.subject || null,
+            message: validated.message,
+          });
 
           if (error) throw error;
 
           return new Response(
-            JSON.stringify({ success: true, message: "Thank you for your message. We'll get back to you soon." }),
-            { status: 200, headers: { "Content-Type": "application/json" } }
+            JSON.stringify({
+              success: true,
+              message: "Thank you for your message. We'll get back to you soon.",
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } },
           );
         } catch (err: any) {
           if (err.name === "ZodError") {
-            return new Response(
-              JSON.stringify({ success: false, error: err.errors[0].message }),
-              { status: 400, headers: { "Content-Type": "application/json" } }
-            );
+            return new Response(JSON.stringify({ success: false, error: err.errors[0].message }), {
+              status: 400,
+              headers: { "Content-Type": "application/json" },
+            });
           }
           return new Response(
             JSON.stringify({ success: false, error: "Failed to submit. Please try again." }),
-            { status: 500, headers: { "Content-Type": "application/json" } }
+            { status: 500, headers: { "Content-Type": "application/json" } },
           );
         }
       },

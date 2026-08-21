@@ -7,7 +7,11 @@ export const Route = createFileRoute("/genres")({
   head: () => ({
     meta: [
       { title: "Genres | Taleon Media" },
-      { name: "description", content: "Explore Taleon stories by genre — sci-fi, horror, romance, African stories and more." },
+      {
+        name: "description",
+        content:
+          "Explore Taleon stories by genre — sci-fi, horror, romance, African stories and more.",
+      },
       { property: "og:title", content: "Genres | Taleon Media" },
       { property: "og:description", content: "Explore Taleon stories by genre." },
       { property: "og:url", content: "/genres" },
@@ -22,7 +26,11 @@ function GenresPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Discover" title="Genres" lede="Choose the kind of world you want to disappear into." />
+      <PageHeader
+        eyebrow="Discover"
+        title="Genres"
+        lede="Choose the kind of world you want to disappear into."
+      />
       <div className="mx-auto grid w-full max-w-7xl gap-4 px-4 pb-16 sm:grid-cols-2 sm:px-6 lg:grid-cols-3">
         {genres.map((g: any) => (
           <Link

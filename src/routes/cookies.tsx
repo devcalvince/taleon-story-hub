@@ -7,7 +7,10 @@ export const Route = createFileRoute("/cookies")({
       { title: "Cookie Policy | Taleon Media" },
       { name: "description", content: "How Taleon Media uses cookies and similar technologies." },
       { property: "og:title", content: "Cookie Policy | Taleon Media" },
-      { property: "og:description", content: "How Taleon Media uses cookies and similar technologies." },
+      {
+        property: "og:description",
+        content: "How Taleon Media uses cookies and similar technologies.",
+      },
       { property: "og:url", content: "/cookies" },
     ],
     links: [{ rel: "canonical", href: "/cookies" }],

@@ -4,7 +4,9 @@ const CLOUDINARY_API_KEY = process.env["CLOUDINARY_API_KEY"] || "";
 const CLOUDINARY_API_SECRET = process.env["CLOUDINARY_API_SECRET"] || "";
 
 export function isCloudinaryEnabled(): boolean {
-  return CLOUDINARY_ENABLED && !!CLOUDINARY_CLOUD_NAME && !!CLOUDINARY_API_KEY && !!CLOUDINARY_API_SECRET;
+  return (
+    CLOUDINARY_ENABLED && !!CLOUDINARY_CLOUD_NAME && !!CLOUDINARY_API_KEY && !!CLOUDINARY_API_SECRET
+  );
 }
 
 export interface CloudinaryUploadResult {
@@ -18,7 +20,7 @@ export interface CloudinaryUploadResult {
 
 export async function cloudinaryUpload(
   filePath: string,
-  options?: { folder?: string; transformation?: string }
+  options?: { folder?: string; transformation?: string },
 ): Promise<CloudinaryUploadResult | { error: string }> {
   if (!isCloudinaryEnabled()) {
     return { error: "Cloudinary is not enabled" };
@@ -41,10 +43,13 @@ export async function cloudinaryUpload(
   if (options?.transformation) formData.append("transformation", options.transformation);
 
   try {
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
-      method: "POST",
-      body: formData,
-    });
+    const res = await fetch(
+      `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`,
+      {
+        method: "POST",
+        body: formData,
+      },
+    );
     const data = await res.json();
     if (data.error) return { error: data.error.message };
     return data as CloudinaryUploadResult;
@@ -55,7 +60,7 @@ export async function cloudinaryUpload(
 
 export function cloudinaryUrl(
   publicId: string,
-  options?: { width?: number; height?: number; quality?: string; format?: string }
+  options?: { width?: number; height?: number; quality?: string; format?: string },
 ): string {
   if (!isCloudinaryEnabled()) return "";
   const parts = [`https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload`];

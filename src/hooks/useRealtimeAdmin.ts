@@ -2,18 +2,39 @@ import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
-type Table = "stories" | "chapters" | "genres" | "media_assets" | "analytics_events" | "newsletter_subscribers" | "contact_submissions" | "profiles" | "user_roles";
+type Table =
+  | "stories"
+  | "chapters"
+  | "genres"
+  | "media_assets"
+  | "analytics_events"
+  | "newsletter_subscribers"
+  | "contact_submissions"
+  | "profiles"
+  | "user_roles";
 
 const TABLE_INVALIDATION_MAP: Record<Table, string[][]> = {
   stories: [["admin", "stories"], ["admin", "counts"], ["home"], ["stories"]],
-  chapters: [["admin", "chapters"], ["admin", "stories"], ["admin", "counts"], ["story"], ["chapter"]],
+  chapters: [
+    ["admin", "chapters"],
+    ["admin", "stories"],
+    ["admin", "counts"],
+    ["story"],
+    ["chapter"],
+  ],
   genres: [["admin", "genres"], ["genres"], ["stories"], ["home"]],
   media_assets: [["admin", "media"]],
   analytics_events: [["admin", "analytics"]],
   newsletter_subscribers: [["admin", "newsletter"]],
   contact_submissions: [["admin", "contacts"]],
-  profiles: [["admin", "users"], ["admin", "counts"]],
-  user_roles: [["admin", "users"], ["admin", "counts"]],
+  profiles: [
+    ["admin", "users"],
+    ["admin", "counts"],
+  ],
+  user_roles: [
+    ["admin", "users"],
+    ["admin", "counts"],
+  ],
 };
 
 export function useRealtimeAdmin(tables: Table[]) {
@@ -26,15 +47,11 @@ export function useRealtimeAdmin(tables: Table[]) {
 
       const channel = supabase
         .channel(`${id}-${table}`)
-        .on(
-          "postgres_changes",
-          { event: "*", schema: "public", table },
-          () => {
-            for (const key of queryKeys) {
-              qc.invalidateQueries({ queryKey: key });
-            }
-          },
-        )
+        .on("postgres_changes", { event: "*", schema: "public", table }, () => {
+          for (const key of queryKeys) {
+            qc.invalidateQueries({ queryKey: key });
+          }
+        })
         .subscribe();
 
       return channel;
@@ -44,7 +61,9 @@ export function useRealtimeAdmin(tables: Table[]) {
       for (const ch of channels) {
         try {
           supabase.removeChannel(ch);
-        } catch {}
+        } catch {
+          /* channel may already be removed */
+        }
       }
     };
   }, [qc, tables.join(",")]);

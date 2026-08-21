@@ -64,7 +64,10 @@ export function SiteHeader() {
           {user ? (
             <>
               {isAdmin && (
-                <Link to="/admin" className="hidden text-sm text-muted-foreground hover:text-foreground lg:block">
+                <Link
+                  to="/admin"
+                  className="hidden text-sm text-muted-foreground hover:text-foreground lg:block"
+                >
                   Admin
                 </Link>
               )}
@@ -86,7 +89,10 @@ export function SiteHeader() {
             </>
           ) : (
             <>
-              <Link to="/login" className="hidden px-2 text-sm text-muted-foreground hover:text-foreground md:block">
+              <Link
+                to="/login"
+                className="hidden px-2 text-sm text-muted-foreground hover:text-foreground md:block"
+              >
                 Log In
               </Link>
               <Link
@@ -139,11 +145,19 @@ export function SiteHeader() {
               ))}
               {user ? (
                 <>
-                  <Link to="/account" onClick={() => setOpen(false)} className="rounded-md px-2 py-3 text-base hover:bg-surface-2">
+                  <Link
+                    to="/account"
+                    onClick={() => setOpen(false)}
+                    className="rounded-md px-2 py-3 text-base hover:bg-surface-2"
+                  >
                     My Taleon
                   </Link>
                   {isAdmin && (
-                    <Link to="/admin" onClick={() => setOpen(false)} className="rounded-md px-2 py-3 text-base hover:bg-surface-2">
+                    <Link
+                      to="/admin"
+                      onClick={() => setOpen(false)}
+                      className="rounded-md px-2 py-3 text-base hover:bg-surface-2"
+                    >
                       Admin
                     </Link>
                   )}

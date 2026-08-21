@@ -9,18 +9,27 @@ import { PageHeader, EmptyState } from "@/components/site/Section";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, Eye, Star, BookOpen } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/stories")({
   head: () => ({
-    meta: [
-      { title: "Manage Stories | Taleon Admin" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Manage Stories | Taleon Admin" }, { name: "robots", content: "noindex" }],
   }),
   component: AdminStoriesPage,
 });
@@ -110,7 +119,10 @@ function AdminStoriesPage() {
   }
 
   function generateSlug(title: string) {
-    return title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    return title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
   }
 
   async function handleSave() {
@@ -145,7 +157,9 @@ function AdminStoriesPage() {
       }
       await supabase.from("story_genres").delete().eq("story_id", editingStory.id);
       if (formGenreIds.length) {
-        await supabase.from("story_genres").insert(formGenreIds.map(gid => ({ story_id: editingStory.id, genre_id: gid })));
+        await supabase
+          .from("story_genres")
+          .insert(formGenreIds.map((gid) => ({ story_id: editingStory.id, genre_id: gid })));
       }
       toast.success("Story updated");
     } else {
@@ -156,7 +170,9 @@ function AdminStoriesPage() {
         return;
       }
       if (formGenreIds.length && data) {
-        await supabase.from("story_genres").insert(formGenreIds.map(gid => ({ story_id: data.id, genre_id: gid })));
+        await supabase
+          .from("story_genres")
+          .insert(formGenreIds.map((gid) => ({ story_id: data.id, genre_id: gid })));
       }
       toast.success("Story created");
     }
@@ -180,12 +196,19 @@ function AdminStoriesPage() {
     invalidateStoryData(queryClient);
   }
 
-  if (loading) return <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">Loading…</div>;
+  if (loading)
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">
+        Loading…
+      </div>
+    );
   if (!isAdmin) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
         <EmptyState title="Admins only" body="This area is restricted to Taleon administrators.">
-          <Link to="/account" className="rounded-md border border-border px-5 py-2.5 text-sm">Back to my library</Link>
+          <Link to="/account" className="rounded-md border border-border px-5 py-2.5 text-sm">
+            Back to my library
+          </Link>
         </EmptyState>
       </div>
     );
@@ -193,7 +216,11 @@ function AdminStoriesPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Admin" title="Manage Stories" lede="Create, edit, and publish stories." />
+      <PageHeader
+        eyebrow="Admin"
+        title="Manage Stories"
+        lede="Create, edit, and publish stories."
+      />
       <div className="mx-auto w-full max-w-7xl space-y-6 px-4 pb-20 sm:px-6">
         <div className="flex justify-end">
           <Button onClick={openCreate} className="gap-2">
@@ -226,27 +253,54 @@ function AdminStoriesPage() {
                     <td className="px-4 py-3 font-medium">{s.title}</td>
                     <td className="px-4 py-3 text-muted-foreground">{s.author}</td>
                     <td className="px-4 py-3">
-                      <Badge variant={s.status === "ongoing" ? "default" : s.status === "completed" ? "secondary" : "outline"}>
+                      <Badge
+                        variant={
+                          s.status === "ongoing"
+                            ? "default"
+                            : s.status === "completed"
+                              ? "secondary"
+                              : "outline"
+                        }
+                      >
                         {s.status}
                       </Badge>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{s.is_premium ? "Premium" : "Free"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {s.is_premium ? "Premium" : "Free"}
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">{s.views ?? 0}</td>
                     <td className="px-4 py-3">
-                      <button onClick={() => toggleFeatured(s)} className={s.is_featured ? "text-gold" : "text-muted-foreground hover:text-gold"}>
+                      <button
+                        onClick={() => toggleFeatured(s)}
+                        className={
+                          s.is_featured ? "text-gold" : "text-muted-foreground hover:text-gold"
+                        }
+                      >
                         <Star className={`h-4 w-4 ${s.is_featured ? "fill-current" : ""}`} />
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground">{s.published_at ? new Date(s.published_at).toLocaleDateString() : "—"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {s.published_at ? new Date(s.published_at).toLocaleDateString() : "—"}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
-                        <Link to="/story/$slug" params={{ slug: s.slug }} className="p-1 text-muted-foreground hover:text-foreground">
+                        <Link
+                          to="/story/$slug"
+                          params={{ slug: s.slug }}
+                          className="p-1 text-muted-foreground hover:text-foreground"
+                        >
                           <Eye className="h-4 w-4" />
                         </Link>
-                        <button onClick={() => openEdit(s)} className="p-1 text-muted-foreground hover:text-gold">
+                        <button
+                          onClick={() => openEdit(s)}
+                          className="p-1 text-muted-foreground hover:text-gold"
+                        >
                           <Pencil className="h-4 w-4" />
                         </button>
-                        <button onClick={() => deleteStory(s.id)} className="p-1 text-muted-foreground hover:text-red-500">
+                        <button
+                          onClick={() => deleteStory(s.id)}
+                          className="p-1 text-muted-foreground hover:text-red-500"
+                        >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -267,11 +321,22 @@ function AdminStoriesPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Title *</label>
-                  <Input value={formTitle} onChange={(e) => { setFormTitle(e.target.value); if (!editingStory) setFormSlug(generateSlug(e.target.value)); }} placeholder="Story title" />
+                  <Input
+                    value={formTitle}
+                    onChange={(e) => {
+                      setFormTitle(e.target.value);
+                      if (!editingStory) setFormSlug(generateSlug(e.target.value));
+                    }}
+                    placeholder="Story title"
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Slug</label>
-                  <Input value={formSlug} onChange={(e) => setFormSlug(e.target.value)} placeholder="auto-generated" />
+                  <Input
+                    value={formSlug}
+                    onChange={(e) => setFormSlug(e.target.value)}
+                    placeholder="auto-generated"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
@@ -280,26 +345,45 @@ function AdminStoriesPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Short Description</label>
-                <Input value={formShortDesc} onChange={(e) => setFormShortDesc(e.target.value)} placeholder="One-line description for cards" />
+                <Input
+                  value={formShortDesc}
+                  onChange={(e) => setFormShortDesc(e.target.value)}
+                  placeholder="One-line description for cards"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Full Description</label>
-                <Textarea value={formDescription} onChange={(e) => setFormDescription(e.target.value)} rows={4} placeholder="Full story description" />
+                <Textarea
+                  value={formDescription}
+                  onChange={(e) => setFormDescription(e.target.value)}
+                  rows={4}
+                  placeholder="Full story description"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Cover Image URL</label>
-                  <Input value={formCoverUrl} onChange={(e) => setFormCoverUrl(e.target.value)} placeholder="https://..." />
+                  <Input
+                    value={formCoverUrl}
+                    onChange={(e) => setFormCoverUrl(e.target.value)}
+                    placeholder="https://..."
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Banner Image URL</label>
-                  <Input value={formBannerUrl} onChange={(e) => setFormBannerUrl(e.target.value)} placeholder="https://..." />
+                  <Input
+                    value={formBannerUrl}
+                    onChange={(e) => setFormBannerUrl(e.target.value)}
+                    placeholder="https://..."
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Status</label>
                 <Select value={formStatus} onValueChange={setFormStatus}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="ongoing">Ongoing</SelectItem>
                     <SelectItem value="completed">Completed</SelectItem>
@@ -314,9 +398,15 @@ function AdminStoriesPage() {
                     <button
                       key={g.id}
                       type="button"
-                      onClick={() => setFormGenreIds(prev => prev.includes(g.id) ? prev.filter(id => id !== g.id) : [...prev, g.id])}
+                      onClick={() =>
+                        setFormGenreIds((prev) =>
+                          prev.includes(g.id) ? prev.filter((id) => id !== g.id) : [...prev, g.id],
+                        )
+                      }
                       className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                        formGenreIds.includes(g.id) ? "bg-primary text-primary-foreground border-primary" : "border-border text-muted-foreground hover:text-foreground"
+                        formGenreIds.includes(g.id)
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "border-border text-muted-foreground hover:text-foreground"
                       }`}
                     >
                       {g.name}
@@ -326,20 +416,37 @@ function AdminStoriesPage() {
               </div>
               <div className="flex flex-wrap gap-4">
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={formIsPremium} onChange={(e) => setFormIsPremium(e.target.checked)} className="rounded" />
+                  <input
+                    type="checkbox"
+                    checked={formIsPremium}
+                    onChange={(e) => setFormIsPremium(e.target.checked)}
+                    className="rounded"
+                  />
                   Premium
                 </label>
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={formIsFeatured} onChange={(e) => setFormIsFeatured(e.target.checked)} className="rounded" />
+                  <input
+                    type="checkbox"
+                    checked={formIsFeatured}
+                    onChange={(e) => setFormIsFeatured(e.target.checked)}
+                    className="rounded"
+                  />
                   Featured
                 </label>
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={formIsOriginal} onChange={(e) => setFormIsOriginal(e.target.checked)} className="rounded" />
+                  <input
+                    type="checkbox"
+                    checked={formIsOriginal}
+                    onChange={(e) => setFormIsOriginal(e.target.checked)}
+                    className="rounded"
+                  />
                   Taleon Original
                 </label>
               </div>
               <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                  Cancel
+                </Button>
                 <Button onClick={handleSave} disabled={saving}>
                   {saving ? "Saving..." : editingStory ? "Update" : "Create"}
                 </Button>

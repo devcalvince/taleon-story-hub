@@ -1,9 +1,15 @@
-const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_FILE_SIZE = 15 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
-const FETCH_TIMEOUT = 15000;
+const FETCH_TIMEOUT = 30000;
 
 function isPrivateIp(hostname: string): boolean {
-  if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1" || hostname === "::ffff:127.0.0.1") return true;
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1" ||
+    hostname === "::ffff:127.0.0.1"
+  )
+    return true;
   if (/^10\./.test(hostname)) return true;
   if (/^172\.(1[6-9]|2\d|3[01])\./.test(hostname)) return true;
   if (/^192\.168\./.test(hostname)) return true;
@@ -11,18 +17,20 @@ function isPrivateIp(hostname: string): boolean {
   return false;
 }
 
-export type ImportResult = {
-  ok: true;
-  data: ArrayBuffer;
-  contentType: string;
-  width: number;
-  height: number;
-  format: string;
-  fileSize: number;
-} | {
-  ok: false;
-  error: string;
-}
+export type ImportResult =
+  | {
+      ok: true;
+      data: ArrayBuffer;
+      contentType: string;
+      width: number;
+      height: number;
+      format: string;
+      fileSize: number;
+    }
+  | {
+      ok: false;
+      error: string;
+    };
 
 export async function importExternalImage(url: string): Promise<ImportResult> {
   let parsed: URL;
@@ -62,18 +70,22 @@ export async function importExternalImage(url: string): Promise<ImportResult> {
   const contentType = response.headers.get("content-type") || "";
   const clHeader = response.headers.get("content-length");
   if (clHeader && parseInt(clHeader, 10) > MAX_FILE_SIZE) {
-    return { ok: false, error: "Image exceeds 10 MB limit." };
+    return { ok: false, error: "Image exceeds 15 MB limit." };
+  }
+
+  if (!ALLOWED_TYPES.includes(contentType)) {
+    return { ok: false, error: `Unsupported image format. Allowed: JPEG, PNG, WEBP, AVIF.` };
   }
 
   const buffer = await response.arrayBuffer();
   if (buffer.byteLength > MAX_FILE_SIZE) {
-    return { ok: false, error: "Image exceeds 10 MB limit." };
+    return { ok: false, error: "Image exceeds 15 MB limit." };
   }
 
   const bytes = new Uint8Array(buffer.slice(0, 16));
   const mime = detectMime(bytes);
   if (!mime || !ALLOWED_TYPES.includes(mime)) {
-    return { ok: false, error: `Unsupported image format. Allowed: JPEG, PNG, WEBP.` };
+    return { ok: false, error: `Unsupported image format. Allowed: JPEG, PNG, WEBP, AVIF.` };
   }
 
   const dims = detectDimensions(mime, bytes);
@@ -92,12 +104,17 @@ export async function importExternalImage(url: string): Promise<ImportResult> {
 
 function detectMime(bytes: Uint8Array): string | null {
   if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
-  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return "image/png";
-  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) return "image/webp";
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47)
+    return "image/png";
+  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46)
+    return "image/webp";
   return null;
 }
 
-function detectDimensions(mime: string, bytes: Uint8Array): { width: number; height: number } | null {
+function detectDimensions(
+  mime: string,
+  bytes: Uint8Array,
+): { width: number; height: number } | null {
   try {
     if (mime === "image/png" && bytes.length >= 24) {
       const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -127,7 +144,9 @@ function detectDimensions(mime: string, bytes: Uint8Array): { width: number; hei
         return { width: view.getUint16(26) & 0x3fff, height: view.getUint16(28) & 0x3fff };
       }
     }
-  } catch {}
+  } catch {
+    /* unsupported or corrupt header */
+  }
   return null;
 }
 
@@ -138,9 +157,15 @@ export function sanitizeImportFilename(url: string, format: string): string {
     const parts = u.pathname.split("/");
     const last = parts[parts.length - 1];
     if (last && last.includes(".")) {
-      name = last.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "-").slice(0, 80) || "image";
+      name =
+        last
+          .replace(/\.[^.]+$/, "")
+          .replace(/[^a-zA-Z0-9_-]/g, "-")
+          .slice(0, 80) || "image";
     }
-  } catch {}
+  } catch {
+    /* fall back to default name */
+  }
   const ts = Date.now();
   return `${name}-${ts}.${format}`;
 }

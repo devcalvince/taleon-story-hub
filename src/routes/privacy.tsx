@@ -7,7 +7,10 @@ export const Route = createFileRoute("/privacy")({
       { title: "Privacy Policy | Taleon Media" },
       { name: "description", content: "How Taleon Media collects, uses and protects your data." },
       { property: "og:title", content: "Privacy Policy | Taleon Media" },
-      { property: "og:description", content: "How Taleon Media collects, uses and protects your data." },
+      {
+        property: "og:description",
+        content: "How Taleon Media collects, uses and protects your data.",
+      },
       { property: "og:url", content: "/privacy" },
     ],
     links: [{ rel: "canonical", href: "/privacy" }],

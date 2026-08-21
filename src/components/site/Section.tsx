@@ -22,7 +22,10 @@ export function Section({
           <h2 className="mt-1 text-2xl tracking-wide sm:text-3xl">{title}</h2>
         </div>
         {href && (
-          <Link to={href as never} className="shrink-0 text-xs tracking-widest text-gold uppercase hover:opacity-80">
+          <Link
+            to={href as never}
+            className="shrink-0 text-xs tracking-widest text-gold uppercase hover:opacity-80"
+          >
             {hrefLabel}
           </Link>
         )}
@@ -32,7 +35,15 @@ export function Section({
   );
 }
 
-export function PageHeader({ title, lede, eyebrow }: { title: string; lede?: string; eyebrow?: string }) {
+export function PageHeader({
+  title,
+  lede,
+  eyebrow,
+}: {
+  title: string;
+  lede?: string;
+  eyebrow?: string;
+}) {
   return (
     <header className="mx-auto w-full max-w-7xl px-4 pt-14 pb-6 sm:px-6">
       {eyebrow && <p className="eyebrow">{eyebrow}</p>}
@@ -42,7 +53,15 @@ export function PageHeader({ title, lede, eyebrow }: { title: string; lede?: str
   );
 }
 
-export function EmptyState({ title, body, children }: { title: string; body?: string; children?: ReactNode }) {
+export function EmptyState({
+  title,
+  body,
+  children,
+}: {
+  title: string;
+  body?: string;
+  children?: ReactNode;
+}) {
   return (
     <div className="panel px-6 py-16 text-center">
       <h3 className="text-lg">{title}</h3>
@@ -54,7 +73,11 @@ export function EmptyState({ title, body, children }: { title: string; body?: st
 
 export function LoadingBlock({ label = "Loading" }: { label?: string }) {
   return (
-    <div className="panel flex items-center justify-center px-6 py-16" role="status" aria-live="polite">
+    <div
+      className="panel flex items-center justify-center px-6 py-16"
+      role="status"
+      aria-live="polite"
+    >
       <span className="text-sm text-muted-foreground">{label}…</span>
     </div>
   );

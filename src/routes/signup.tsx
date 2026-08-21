@@ -5,7 +5,10 @@ export const Route = createFileRoute("/signup")({
   head: () => ({
     meta: [
       { title: "Create Account | Taleon Media" },
-      { name: "description", content: "Create a free Taleon Media account to save stories and keep your place." },
+      {
+        name: "description",
+        content: "Create a free Taleon Media account to save stories and keep your place.",
+      },
       { property: "og:title", content: "Create Account | Taleon Media" },
       { property: "og:description", content: "Create a free Taleon Media account." },
       { property: "og:url", content: "/signup" },

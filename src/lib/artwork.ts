@@ -28,7 +28,11 @@ export function coverFor(story: { slug: string; cover_url?: string | null }) {
   return story.cover_url || covers[story.slug] || coverLastSignal;
 }
 
-export function bannerFor(story: { slug: string; banner_url?: string | null; cover_url?: string | null }) {
+export function bannerFor(story: {
+  slug: string;
+  banner_url?: string | null;
+  cover_url?: string | null;
+}) {
   return story.banner_url || banners[story.slug] || coverFor(story);
 }
 

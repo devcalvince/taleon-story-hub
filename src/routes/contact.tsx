@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { PageHeader } from "@/components/site/Section";
+import { track } from "@/lib/analytics";
 
 const CATEGORIES = ["General", "Business", "Partnership", "Copyright", "Support"];
 
@@ -10,7 +11,8 @@ export const Route = createFileRoute("/contact")({
       { title: "Contact | Taleon Media" },
       {
         name: "description",
-        content: "Contact Taleon Media for general, business, partnership, copyright or support enquiries.",
+        content:
+          "Contact Taleon Media for general, business, partnership, copyright or support enquiries.",
       },
       { property: "og:title", content: "Contact | Taleon Media" },
       { property: "og:description", content: "Get in touch with the Taleon Media team." },
@@ -24,19 +26,44 @@ export const Route = createFileRoute("/contact")({
 function ContactPage() {
   const [sent, setSent] = useState(false);
   const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
   const [form, setForm] = useState({ name: "", email: "", category: "General", message: "" });
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     const name = form.name.trim();
     const email = form.email.trim();
     const message = form.message.trim();
-    if (!name || name.length > 100) return setError("Please enter your name (under 100 characters).");
+    if (!name || name.length > 100)
+      return setError("Please enter your name (under 100 characters).");
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email) || email.length > 255)
       return setError("Please enter a valid email address.");
-    if (!message || message.length > 1000) return setError("Please enter a message under 1000 characters.");
+    if (!message || message.length > 1000)
+      return setError("Please enter a message under 1000 characters.");
     setError("");
-    setSent(true);
+    setBusy(true);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email, subject: form.category, message }),
+      });
+      const data = (await res.json()) as { success: boolean; error?: string };
+      if (!res.ok || !data.success) {
+        setError(data.error ?? "Failed to send. Please try again.");
+        return;
+      }
+      // Fired only after the submission succeeds. Form contents are never
+      // sent to analytics — classification parameters only.
+      track("contact_submission", {
+        metadata: { formType: "contact", formLocation: "contact_page" },
+      });
+      setSent(true);
+    } catch {
+      setError("Failed to send. Please try again.");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -51,8 +78,8 @@ function ContactPage() {
           <div className="panel px-6 py-14 text-center">
             <h2 className="text-xl">Message received</h2>
             <p className="mt-3 text-sm text-muted-foreground">
-              Thanks, {form.name.trim()}. Your {form.category.toLowerCase()} enquiry has been logged and the Taleon team
-              will respond by email.
+              Thanks, {form.name.trim()}. Your {form.category.toLowerCase()} enquiry has been logged
+              and the Taleon team will respond by email.
             </p>
           </div>
         ) : (
@@ -116,8 +143,11 @@ function ContactPage() {
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <button className="rounded-md bg-gold px-6 py-3 text-sm font-medium tracking-wider text-gold-foreground uppercase">
-              Send message
+            <button
+              disabled={busy}
+              className="rounded-md bg-gold px-6 py-3 text-sm font-medium tracking-wider text-gold-foreground uppercase disabled:opacity-60"
+            >
+              {busy ? "Sending…" : "Send message"}
             </button>
           </form>
         )}

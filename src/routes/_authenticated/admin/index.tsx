@@ -4,10 +4,7 @@ import { PageHeader } from "@/components/site/Section";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   head: () => ({
-    meta: [
-      { title: "Admin Dashboard | Taleon Media" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Admin Dashboard | Taleon Media" }, { name: "robots", content: "noindex" }],
   }),
   component: AdminDashboardPage,
 });
@@ -21,7 +18,11 @@ function AdminDashboardPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Admin" title="Taleon control room" lede="Catalogue overview and publishing status." />
+      <PageHeader
+        eyebrow="Admin"
+        title="Taleon control room"
+        lede="Catalogue overview and publishing status."
+      />
       <div className="space-y-10">
         {/* Stats */}
         <div className="grid gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-4">
@@ -57,7 +58,9 @@ function AdminDashboardPage() {
                   <tr key={s.id} className="bg-surface-2/40">
                     <td className="px-4 py-3">{s.title}</td>
                     <td className="px-4 py-3 text-muted-foreground">{s.status}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{s.is_premium ? "Premium" : "Free"}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {s.is_premium ? "Premium" : "Free"}
+                    </td>
                     <td className="px-4 py-3 text-muted-foreground">{s.views ?? 0}</td>
                     <td className="px-4 py-3">
                       <Link to="/story/$slug" params={{ slug: s.slug }} className="text-gold">

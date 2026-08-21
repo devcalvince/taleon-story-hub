@@ -41,15 +41,22 @@ export function StoryCard({ story, action }: { story: StorySummary; action?: str
           />
           <div className="pointer-events-none absolute inset-0 bg-linear-to-t from-background via-background/10 to-transparent opacity-80" />
           <div className="absolute inset-x-0 bottom-0 flex items-center gap-2 p-3 text-[11px] text-muted-foreground">
-            {story.has_audio && <Headphones className="size-3.5 text-gold" aria-label="Audio available" />}
-            {story.has_video && <Play className="size-3.5 text-gold" aria-label="Video available" />}
+            {story.has_audio && (
+              <Headphones className="size-3.5 text-gold" aria-label="Audio available" />
+            )}
+            {story.has_video && (
+              <Play className="size-3.5 text-gold" aria-label="Video available" />
+            )}
             <span className="ml-auto">{STATUS_LABEL[story.status] ?? story.status}</span>
           </div>
         </div>
         <h3 className="mt-3 text-base leading-tight font-semibold">{story.title}</h3>
       </Link>
       <p className="mt-1 text-xs text-muted-foreground">
-        {(story.genres ?? []).map((g) => g.name).slice(0, 2).join(" / ")}
+        {(story.genres ?? [])
+          .map((g) => g.name)
+          .slice(0, 2)
+          .join(" / ")}
         {story.chapter_count ? ` • ${story.chapter_count} chapters` : ""}
       </p>
       {story.short_description && (
@@ -72,7 +79,9 @@ export function StoryGrid({ stories, empty }: { stories: StorySummary[]; empty?:
   if (!stories.length) {
     return (
       <div className="panel px-6 py-14 text-center">
-        <p className="text-sm text-muted-foreground">{empty ?? "Nothing here yet. New Taleon stories are on the way."}</p>
+        <p className="text-sm text-muted-foreground">
+          {empty ?? "Nothing here yet. New Taleon stories are on the way."}
+        </p>
       </div>
     );
   }

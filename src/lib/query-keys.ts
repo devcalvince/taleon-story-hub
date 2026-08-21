@@ -93,7 +93,5 @@ export function invalidateUserData(qc: QueryClient) {
  * After a media asset change.
  */
 export function invalidateMediaData(qc: QueryClient) {
-  return Promise.all([
-    qc.invalidateQueries({ queryKey: ["admin", "media"] }),
-  ]);
+  return Promise.all([qc.invalidateQueries({ queryKey: ["admin", "media"] })]);
 }

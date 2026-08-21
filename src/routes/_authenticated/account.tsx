@@ -10,7 +10,10 @@ export const Route = createFileRoute("/_authenticated/account")({
   head: () => ({
     meta: [
       { title: "My Library | Taleon Media" },
-      { name: "description", content: "Your Taleon library: saved stories, follows and reading progress." },
+      {
+        name: "description",
+        content: "Your Taleon library: saved stories, follows and reading progress.",
+      },
       { property: "og:title", content: "My Library | Taleon Media" },
       { property: "og:description", content: "Your Taleon library." },
       { property: "og:url", content: "/account" },
@@ -37,11 +40,21 @@ function AccountPage() {
   useEffect(() => {
     if (!user) return;
     const select = "story_id, stories:story_id (id, slug, title, tagline, cover_url)";
-    supabase.from("bookmarks").select(select).eq("user_id", user.id).then(({ data }) => setBookmarks((data as any) ?? []));
-    supabase.from("follows").select(select).eq("user_id", user.id).then(({ data }) => setFollows((data as any) ?? []));
+    supabase
+      .from("bookmarks")
+      .select(select)
+      .eq("user_id", user.id)
+      .then(({ data }) => setBookmarks((data as any) ?? []));
+    supabase
+      .from("follows")
+      .select(select)
+      .eq("user_id", user.id)
+      .then(({ data }) => setFollows((data as any) ?? []));
     supabase
       .from("reading_progress")
-      .select("story_id, percent, chapter_number, updated_at, stories:story_id (id, slug, title, cover_url)")
+      .select(
+        "story_id, percent, chapter_number, updated_at, stories:story_id (id, slug, title, cover_url)",
+      )
       .eq("user_id", user.id)
       .order("updated_at", { ascending: false })
       .then(({ data }) => setProgress((data as any) ?? []));
@@ -56,7 +69,10 @@ function AccountPage() {
   async function saveProfile(e: React.FormEvent) {
     e.preventDefault();
     if (!user) return;
-    await supabase.from("profiles").update({ display_name: displayName.trim().slice(0, 60) }).eq("id", user.id);
+    await supabase
+      .from("profiles")
+      .update({ display_name: displayName.trim().slice(0, 60) })
+      .eq("id", user.id);
     setSaved(true);
     setTimeout(() => setSaved(false), 2500);
   }
@@ -90,7 +106,10 @@ function AccountPage() {
               {t.label}
             </button>
           ))}
-          <button onClick={signOut} className="ml-auto text-xs text-muted-foreground hover:text-foreground">
+          <button
+            onClick={signOut}
+            className="ml-auto text-xs text-muted-foreground hover:text-foreground"
+          >
             Sign out
           </button>
         </div>
@@ -98,7 +117,10 @@ function AccountPage() {
         <div className="py-10">
           {tab === "reading" &&
             (progress.length === 0 ? (
-              <EmptyState title="Nothing in progress" body="Open a story and your place will be saved automatically.">
+              <EmptyState
+                title="Nothing in progress"
+                body="Open a story and your place will be saved automatically."
+              >
                 <Link to="/stories" className="rounded-md border border-border px-5 py-2.5 text-sm">
                   Browse stories
                 </Link>
@@ -109,11 +131,17 @@ function AccountPage() {
                   <li key={p.story_id}>
                     <Link
                       to="/story/$slug/chapter/$chapterNumber"
-                      params={{ slug: p.stories?.slug ?? "", chapterNumber: String(p.chapter_number ?? 1) }}
+                      params={{
+                        slug: p.stories?.slug ?? "",
+                        chapterNumber: String(p.chapter_number ?? 1),
+                      }}
                       className="flex items-center gap-4 rounded-lg border border-border bg-surface-2/50 p-4 hover:bg-surface-2"
                     >
                       <img
-                        src={coverFor({ slug: p.stories?.slug ?? "", cover_url: p.stories?.cover_url })}
+                        src={coverFor({
+                          slug: p.stories?.slug ?? "",
+                          cover_url: p.stories?.cover_url,
+                        })}
                         alt=""
                         className="h-20 w-14 rounded object-cover"
                       />
@@ -144,7 +172,10 @@ function AccountPage() {
                     title={tab === "saved" ? "No saved stories" : "Not following anything yet"}
                     body="Use the save and follow buttons on any story page."
                   >
-                    <Link to="/stories" className="rounded-md border border-border px-5 py-2.5 text-sm">
+                    <Link
+                      to="/stories"
+                      className="rounded-md border border-border px-5 py-2.5 text-sm"
+                    >
                       Browse stories
                     </Link>
                   </EmptyState>
@@ -159,11 +190,16 @@ function AccountPage() {
                       className="group block"
                     >
                       <img
-                        src={coverFor({ slug: r.stories?.slug ?? "", cover_url: r.stories?.cover_url })}
+                        src={coverFor({
+                          slug: r.stories?.slug ?? "",
+                          cover_url: r.stories?.cover_url,
+                        })}
                         alt={r.stories?.title ?? ""}
                         className="aspect-2/3 w-full rounded-lg object-cover"
                       />
-                      <p className="mt-2 truncate text-sm group-hover:text-gold">{r.stories?.title}</p>
+                      <p className="mt-2 truncate text-sm group-hover:text-gold">
+                        {r.stories?.title}
+                      </p>
                     </Link>
                   ))}
                 </div>

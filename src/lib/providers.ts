@@ -8,19 +8,21 @@ export interface GenerateRequest {
   sceneId?: string;
 }
 
-export type GenerateResult = {
-  ok: true;
-  imageUrl: string;
-  provider: string;
-  model: string;
-  generationDurationMs?: number;
-  estimatedCost?: number;
-  currency?: string;
-} | {
-  ok: false;
-  error: string;
-  provider: string;
-}
+export type GenerateResult =
+  | {
+      ok: true;
+      imageUrl: string;
+      provider: string;
+      model: string;
+      generationDurationMs?: number;
+      estimatedCost?: number;
+      currency?: string;
+    }
+  | {
+      ok: false;
+      error: string;
+      provider: string;
+    };
 
 export interface ImageProvider {
   name: string;
@@ -38,7 +40,8 @@ export class ManualUploadProvider implements ImageProvider {
   async generate(_req: GenerateRequest): Promise<GenerateResult> {
     return {
       ok: false,
-      error: "Manual provider does not support automatic generation. Use external tools and upload/import results.",
+      error:
+        "Manual provider does not support automatic generation. Use external tools and upload/import results.",
       provider: this.name,
     };
   }

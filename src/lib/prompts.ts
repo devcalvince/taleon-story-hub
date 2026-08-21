@@ -137,7 +137,8 @@ export function buildTaleonVisualPrompt(ctx: PromptContext): string {
   if (ctx.scene) {
     if (ctx.scene.description) parts.push(ctx.scene.description);
     if (ctx.scene.mood) parts.push(`mood: ${ctx.scene.mood}`);
-    if (ctx.scene.location_name && !ctx.location) parts.push(`location: ${ctx.scene.location_name}`);
+    if (ctx.scene.location_name && !ctx.location)
+      parts.push(`location: ${ctx.scene.location_name}`);
     if (ctx.scene.camera_direction) parts.push(`camera: ${ctx.scene.camera_direction}`);
     if (ctx.scene.lighting_direction) parts.push(`lighting: ${ctx.scene.lighting_direction}`);
   }
@@ -216,8 +217,11 @@ export function buildCoverPrompt(ctx: PromptContext): string {
 }
 
 export function buildSocialPrompt(ctx: PromptContext, platform: string): string {
-  const assetType = platform === "youtube" ? "youtube_thumbnail"
-    : platform === "tiktok" ? "social_vertical"
-    : "social_square";
+  const assetType =
+    platform === "youtube"
+      ? "youtube_thumbnail"
+      : platform === "tiktok"
+        ? "social_vertical"
+        : "social_square";
   return buildTaleonVisualPrompt({ ...ctx, assetType });
 }

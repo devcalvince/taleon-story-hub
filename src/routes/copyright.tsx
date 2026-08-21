@@ -5,9 +5,15 @@ export const Route = createFileRoute("/copyright")({
   head: () => ({
     meta: [
       { title: "Copyright | Taleon Media" },
-      { name: "description", content: "Copyright ownership and takedown process for Taleon Media originals." },
+      {
+        name: "description",
+        content: "Copyright ownership and takedown process for Taleon Media originals.",
+      },
       { property: "og:title", content: "Copyright | Taleon Media" },
-      { property: "og:description", content: "Copyright ownership and takedown process for Taleon Media." },
+      {
+        property: "og:description",
+        content: "Copyright ownership and takedown process for Taleon Media.",
+      },
       { property: "og:url", content: "/copyright" },
     ],
     links: [{ rel: "canonical", href: "/copyright" }],

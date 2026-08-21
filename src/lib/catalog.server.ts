@@ -2,11 +2,9 @@ import { createClient } from "@supabase/supabase-js";
 
 /** Server-side, publishable-key client. Public catalogue reads only (RLS as anon). */
 function db() {
-  return createClient(
-    process.env["SUPABASE_URL"]!,
-    process.env["SUPABASE_PUBLISHABLE_KEY"]!,
-    { auth: { persistSession: false, autoRefreshToken: false } },
-  );
+  return createClient(process.env["SUPABASE_URL"]!, process.env["SUPABASE_PUBLISHABLE_KEY"]!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
 }
 
 const STORY_FIELDS =
@@ -54,13 +52,15 @@ async function chapterCounts(storyIds: string[]) {
   return counts;
 }
 
-export async function listStories(opts: {
-  sort?: SortKey;
-  genre?: string;
-  q?: string;
-  status?: string;
-  limit?: number;
-} = {}) {
+export async function listStories(
+  opts: {
+    sort?: SortKey;
+    genre?: string;
+    q?: string;
+    status?: string;
+    limit?: number;
+  } = {},
+) {
   const sort = SORTS[opts.sort ?? "trending"];
   let ids: string[] | null = null;
   if (opts.genre) {
@@ -93,7 +93,12 @@ export async function listGenres() {
 
 export async function getHome() {
   const [featuredRows, trending, newest, popular, genres] = await Promise.all([
-    db().from("stories").select(STORY_FIELDS).eq("is_featured", true).eq("is_published", true).limit(1),
+    db()
+      .from("stories")
+      .select(STORY_FIELDS)
+      .eq("is_featured", true)
+      .eq("is_published", true)
+      .limit(1),
     listStories({ sort: "trending", limit: 8 }),
     listStories({ sort: "newest", limit: 8 }),
     listStories({ sort: "most_read", limit: 6 }),
@@ -138,16 +143,25 @@ export async function getStory(slug: string) {
 }
 
 export async function getChapter(slug: string, chapterNumber: number) {
+  // Genre is embedded through story_genres in the same query — no extra
+  // roundtrip — so chapter analytics can attribute story_genre.
   const { data: story } = await db()
     .from("stories")
-    .select("id,slug,title,author,cover_url,has_audio")
+    .select("id,slug,title,author,cover_url,has_audio,story_genres(genres(slug,name))")
     .eq("slug", slug)
     .eq("is_published", true)
     .maybeSingle();
   if (!story) return null;
+  const embedded = story as typeof story & {
+    story_genres?: Array<{ genres?: { slug?: string; name?: string } | null } | null>;
+  };
+  const genreSlug = embedded.story_genres?.[0]?.genres?.slug ?? null;
+  const storyWithGenre = { ...story, genre: genreSlug };
   const { data: chapters } = await db()
     .from("chapters")
-    .select("id,chapter_number,title,content,word_count,audio_url,is_premium")
+    .select(
+      "id,chapter_number,title,content,word_count,audio_url,video_url,media_asset_id,is_premium",
+    )
     .eq("story_id", story.id)
     .eq("is_published", true)
     .order("chapter_number");
@@ -155,7 +169,7 @@ export async function getChapter(slug: string, chapterNumber: number) {
   const index = list.findIndex((c) => c.chapter_number === chapterNumber);
   if (index === -1) return null;
   return {
-    story,
+    story: storyWithGenre,
     chapter: list[index],
     total: list.length,
     prev: index > 0 ? list[index - 1]!.chapter_number : null,
@@ -166,7 +180,9 @@ export async function getChapter(slug: string, chapterNumber: number) {
 export async function listAudio() {
   const { data } = await db()
     .from("chapters")
-    .select("id,chapter_number,title,audio_url,story_id,stories(slug,title,cover_url,author)")
+    .select(
+      "id,chapter_number,title,audio_url,video_url,media_asset_id,story_id,stories(slug,title,cover_url,author)",
+    )
     .eq("is_published", true)
     .order("chapter_number");
   const stories = await listStories({ sort: "most_listened", limit: 12 });
@@ -189,7 +205,7 @@ export async function searchAll(q: string) {
     listStories({ q: term, limit: 12 }),
     db()
       .from("chapters")
-      .select("id,title,chapter_number,stories(slug,title)")
+      .select("id,title,chapter_number,stories(slug,title),media_asset_id")
       .ilike("title", `%${term}%`)
       .eq("is_published", true)
       .limit(10),

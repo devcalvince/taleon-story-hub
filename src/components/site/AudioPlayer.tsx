@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Pause, Play, SkipBack, SkipForward, Volume2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useSession } from "@/hooks/useSession";
+// Aliased: the component prop `track` (AudioTrack) shadows this name.
+import { track as trackEvent } from "@/lib/analytics";
 
 export type AudioTrack = {
   id: string;
@@ -35,10 +37,39 @@ export function AudioPlayer({
   const [volume, setVolume] = useState(1);
   const { user } = useSession();
 
+  // Analytics guards — one play per playback start, one event per milestone.
+  const playTrackedFor = useRef<string | null>(null);
+  const milestones = useRef<Set<number>>(new Set());
+
   useEffect(() => {
     setPlaying(false);
     setPosition(0);
+    playTrackedFor.current = null;
+    milestones.current = new Set();
   }, [track?.id]);
+
+  function mediaMetadata() {
+    return {
+      mediaTitle: track?.title ?? "",
+      chapterNumber: 0,
+    };
+  }
+
+  /** Fire milestone events once each, based on actual playback position. */
+  function handleMilestones(current: number, total: number) {
+    if (!track || !total || total <= 0) return;
+    const pct = (current / total) * 100;
+    for (const m of [25, 50, 75]) {
+      if (pct >= m && !milestones.current.has(m)) {
+        milestones.current.add(m);
+        trackEvent(m === 25 ? "audio_25" : m === 50 ? "audio_50" : "audio_75", {
+          storyId: track.storyId,
+          chapterId: track.id,
+          metadata: mediaMetadata(),
+        });
+      }
+    }
+  }
 
   // Persist listening position for signed-in members.
   useEffect(() => {
@@ -73,7 +104,8 @@ export function AudioPlayer({
 
       {unavailable ? (
         <p className="mt-5 rounded-md border border-border bg-surface-2 px-4 py-3 text-sm text-muted-foreground">
-          Narration for this chapter is being recorded. It will appear here as soon as it is released.
+          Narration for this chapter is being recorded. It will appear here as soon as it is
+          released.
         </p>
       ) : (
         <>
@@ -81,9 +113,32 @@ export function AudioPlayer({
             ref={audioRef}
             src={track.src ?? undefined}
             preload="none"
-            onTimeUpdate={(e) => setPosition(e.currentTarget.currentTime)}
+            onPlay={() => {
+              // Fires only when playback actually begins — never on render.
+              if (playTrackedFor.current !== track.id) {
+                playTrackedFor.current = track.id;
+                trackEvent("audio_play", {
+                  storyId: track.storyId,
+                  chapterId: track.id,
+                  metadata: mediaMetadata(),
+                });
+              }
+            }}
+            onTimeUpdate={(e) => {
+              setPosition(e.currentTarget.currentTime);
+              handleMilestones(e.currentTarget.currentTime, e.currentTarget.duration);
+            }}
             onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
-            onEnded={() => setPlaying(false)}
+            onEnded={() => {
+              setPlaying(false);
+              if (playTrackedFor.current === track.id) {
+                trackEvent("audio_complete", {
+                  storyId: track.storyId,
+                  chapterId: track.id,
+                  metadata: mediaMetadata(),
+                });
+              }
+            }}
           />
           <div className="mt-5 flex items-center gap-3">
             <input
@@ -108,7 +163,12 @@ export function AudioPlayer({
       )}
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <button onClick={onPrev} disabled={!onPrev} aria-label="Previous chapter" className="rounded-md border border-border p-2 disabled:opacity-40">
+        <button
+          onClick={onPrev}
+          disabled={!onPrev}
+          aria-label="Previous chapter"
+          className="rounded-md border border-border p-2 disabled:opacity-40"
+        >
           <SkipBack className="size-4" />
         </button>
         <button
@@ -128,7 +188,12 @@ export function AudioPlayer({
         >
           {playing ? <Pause className="size-4" /> : <Play className="size-4" />}
         </button>
-        <button onClick={onNext} disabled={!onNext} aria-label="Next chapter" className="rounded-md border border-border p-2 disabled:opacity-40">
+        <button
+          onClick={onNext}
+          disabled={!onNext}
+          aria-label="Next chapter"
+          className="rounded-md border border-border p-2 disabled:opacity-40"
+        >
           <SkipForward className="size-4" />
         </button>
 

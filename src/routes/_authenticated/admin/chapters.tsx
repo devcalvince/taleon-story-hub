@@ -16,19 +16,16 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/chapters")({
   head: () => ({
-    meta: [
-      { title: "Manage Chapters | Taleon Admin" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Manage Chapters | Taleon Admin" }, { name: "robots", content: "noindex" }],
   }),
   component: AdminChaptersPage,
 });
 
 interface Chapter {
   id: string;
-  title: string;
-  chapter_number: number;
   story_id: string;
+  chapter_number: number;
+  title: string;
   content: string;
   word_count: number;
   is_premium: boolean;
@@ -68,6 +65,7 @@ function AdminChaptersPage() {
   const [formIsPublished, setFormIsPublished] = useState(true);
   const [formAudioUrl, setFormAudioUrl] = useState("");
   const [formVideoUrl, setFormVideoUrl] = useState("");
+  const [formMediaAssetId, setFormMediaAssetId] = useState("");
 
   const chapters = chaptersQuery.data ?? [];
   const stories = storiesQuery.data ?? [];
@@ -170,6 +168,7 @@ function AdminChaptersPage() {
       published_at: formIsPublished ? new Date().toISOString() : null,
       audio_url: formAudioUrl || null,
       video_url: formVideoUrl || null,
+      media_asset_id: formMediaAssetId || null,
     });
   }
 
@@ -182,12 +181,19 @@ function AdminChaptersPage() {
     toggleMutation.mutate(ch);
   }
 
-  if (loading) return <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">Loading…</div>;
+  if (loading)
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">
+        Loading…
+      </div>
+    );
   if (!isAdmin) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
         <EmptyState title="Admins only" body="This area is restricted to Taleon administrators.">
-          <Link to="/account" className="rounded-md border border-border px-5 py-2.5 text-sm">Back to my library</Link>
+          <Link to="/account" className="rounded-md border border-border px-5 py-2.5 text-sm">
+            Back to my library
+          </Link>
         </EmptyState>
       </div>
     );
@@ -195,7 +201,11 @@ function AdminChaptersPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Admin" title="Manage Chapters" lede="Create, edit, and publish chapters." />
+      <PageHeader
+        eyebrow="Admin"
+        title="Manage Chapters"
+        lede="Create, edit, and publish chapters."
+      />
       <div className="mx-auto w-full max-w-7xl space-y-6 px-4 pb-20 sm:px-6">
         <div className="flex justify-end">
           <Button onClick={openCreate} className="gap-2">
@@ -225,15 +235,24 @@ function AdminChaptersPage() {
                 {chapters.map((ch) => (
                   <tr key={ch.id} className="bg-surface-2/40">
                     <td className="px-4 py-3 text-muted-foreground">{ch.stories?.title || "—"}</td>
-                    <td className="px-4 py-3 font-mono text-muted-foreground">#{ch.chapter_number}</td>
+                    <td className="px-4 py-3 font-mono text-muted-foreground">
+                      #{ch.chapter_number}
+                    </td>
                     <td className="px-4 py-3 font-medium">{ch.title}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{ch.word_count?.toLocaleString() || 0}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {ch.word_count?.toLocaleString() || 0}
+                    </td>
                     <td className="px-4 py-3">
-                      <Badge variant={ch.is_premium ? "default" : "secondary"}>{ch.is_premium ? "Premium" : "Free"}</Badge>
+                      <Badge variant={ch.is_premium ? "default" : "secondary"}>
+                        {ch.is_premium ? "Premium" : "Free"}
+                      </Badge>
                     </td>
                     <td className="px-4 py-3">
                       <button onClick={() => togglePublished(ch)}>
-                        <Badge variant={ch.is_published ? "default" : "outline"} className="cursor-pointer">
+                        <Badge
+                          variant={ch.is_published ? "default" : "outline"}
+                          className="cursor-pointer"
+                        >
                           {ch.is_published ? "Published" : "Draft"}
                         </Badge>
                       </button>
@@ -241,14 +260,27 @@ function AdminChaptersPage() {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1">
                         {ch.stories?.slug && (
-                          <Link to="/story/$slug/chapter/$chapterNumber" params={{ slug: ch.stories.slug, chapterNumber: String(ch.chapter_number) }} className="p-1 text-muted-foreground hover:text-foreground">
+                          <Link
+                            to="/story/$slug/chapter/$chapterNumber"
+                            params={{
+                              slug: ch.stories.slug,
+                              chapterNumber: String(ch.chapter_number),
+                            }}
+                            className="p-1 text-muted-foreground hover:text-foreground"
+                          >
                             <Eye className="h-4 w-4" />
                           </Link>
                         )}
-                        <button onClick={() => openEdit(ch)} className="p-1 text-muted-foreground hover:text-gold">
+                        <button
+                          onClick={() => openEdit(ch)}
+                          className="p-1 text-muted-foreground hover:text-gold"
+                        >
                           <Pencil className="h-4 w-4" />
                         </button>
-                        <button onClick={() => deleteChapter(ch.id)} className="p-1 text-muted-foreground hover:text-red-500">
+                        <button
+                          onClick={() => deleteChapter(ch.id)}
+                          className="p-1 text-muted-foreground hover:text-red-500"
+                        >
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
@@ -276,23 +308,36 @@ function AdminChaptersPage() {
                   >
                     <option value="">Select story...</option>
                     {stories.map((s) => (
-                      <option key={s.id} value={s.id}>{s.title}</option>
+                      <option key={s.id} value={s.id}>
+                        {s.title}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Chapter Number</label>
-                  <Input type="number" value={formChapterNumber} onChange={(e) => setFormChapterNumber(parseInt(e.target.value))} min={1} />
+                  <Input
+                    type="number"
+                    value={formChapterNumber}
+                    onChange={(e) => setFormChapterNumber(parseInt(e.target.value))}
+                    min={1}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Title *</label>
-                <Input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="Chapter title" />
+                <Input
+                  value={formTitle}
+                  onChange={(e) => setFormTitle(e.target.value)}
+                  placeholder="Chapter title"
+                />
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <label className="text-sm font-medium">Content</label>
-                  <span className="text-xs text-muted-foreground">{formContent ? formContent.split(/\s+/).filter(Boolean).length : 0} words</span>
+                  <span className="text-xs text-muted-foreground">
+                    {formContent ? formContent.split(/\s+/).filter(Boolean).length : 0} words
+                  </span>
                 </div>
                 <Textarea
                   value={formContent}
@@ -305,25 +350,45 @@ function AdminChaptersPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Audio URL</label>
-                  <Input value={formAudioUrl} onChange={(e) => setFormAudioUrl(e.target.value)} placeholder="https://..." />
+                  <Input
+                    value={formAudioUrl}
+                    onChange={(e) => setFormAudioUrl(e.target.value)}
+                    placeholder="https://..."
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Video URL</label>
-                  <Input value={formVideoUrl} onChange={(e) => setFormVideoUrl(e.target.value)} placeholder="https://..." />
+                  <Input
+                    value={formVideoUrl}
+                    onChange={(e) => setFormVideoUrl(e.target.value)}
+                    placeholder="https://..."
+                  />
                 </div>
               </div>
               <div className="flex flex-wrap gap-4">
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={formIsPremium} onChange={(e) => setFormIsPremium(e.target.checked)} className="rounded" />
+                  <input
+                    type="checkbox"
+                    checked={formIsPremium}
+                    onChange={(e) => setFormIsPremium(e.target.checked)}
+                    className="rounded"
+                  />
                   Premium Chapter
                 </label>
                 <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={formIsPublished} onChange={(e) => setFormIsPublished(e.target.checked)} className="rounded" />
+                  <input
+                    type="checkbox"
+                    checked={formIsPublished}
+                    onChange={(e) => setFormIsPublished(e.target.checked)}
+                    className="rounded"
+                  />
                   Published
                 </label>
               </div>
               <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                  Cancel
+                </Button>
                 <Button onClick={handleSave} disabled={saveMutation.isPending}>
                   {saveMutation.isPending ? "Saving..." : editingChapter ? "Update" : "Create"}
                 </Button>

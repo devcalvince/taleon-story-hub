@@ -9,10 +9,7 @@ import { Search, Shield } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin/users")({
   head: () => ({
-    meta: [
-      { title: "Manage Users | Taleon Admin" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Manage Users | Taleon Admin" }, { name: "robots", content: "noindex" }],
   }),
   component: AdminUsersPage,
 });
@@ -22,24 +19,33 @@ function AdminUsersPage() {
   const { data: users = [], isLoading: loadingData } = useAdminUsers();
   const [searchQuery, setSearchQuery] = useState("");
 
-  const filtered = users.filter(u => {
+  const filtered = users.filter((u) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    return (u.display_name?.toLowerCase().includes(q)) ||
-           (u.username?.toLowerCase().includes(q)) ||
-           (u.bio?.toLowerCase().includes(q));
+    return (
+      u.display_name?.toLowerCase().includes(q) ||
+      u.username?.toLowerCase().includes(q) ||
+      u.bio?.toLowerCase().includes(q)
+    );
   });
 
-  const adminCount = users.filter(u => u.user_roles?.some(r => r.role === "admin")).length;
+  const adminCount = users.filter((u) => u.user_roles?.some((r) => r.role === "admin")).length;
   const totalFollows = users.reduce((acc, u) => acc + (u._follows || 0), 0);
   const totalBookmarks = users.reduce((acc, u) => acc + (u._bookmarks || 0), 0);
 
-  if (loading) return <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">Loading…</div>;
+  if (loading)
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">
+        Loading…
+      </div>
+    );
   if (!isAdmin) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
         <EmptyState title="Admins only" body="This area is restricted to Taleon administrators.">
-          <Link to="/account" className="rounded-md border border-border px-5 py-2.5 text-sm">Back to my library</Link>
+          <Link to="/account" className="rounded-md border border-border px-5 py-2.5 text-sm">
+            Back to my library
+          </Link>
         </EmptyState>
       </div>
     );
@@ -77,7 +83,10 @@ function AdminUsersPage() {
         {loadingData ? (
           <div className="text-center py-8 text-muted-foreground">Loading users...</div>
         ) : filtered.length === 0 ? (
-          <EmptyState title="No users found" body={searchQuery ? "Try a different search." : "No users have signed up yet."} />
+          <EmptyState
+            title="No users found"
+            body={searchQuery ? "Try a different search." : "No users have signed up yet."}
+          />
         ) : (
           <div className="overflow-x-auto rounded-lg border border-border">
             <table className="w-full text-left text-sm">
@@ -105,21 +114,29 @@ function AdminUsersPage() {
                           )}
                         </div>
                         <div>
-                          <p className="font-medium">{u.display_name || u.username || "Anonymous"}</p>
-                          {u.username && <p className="text-xs text-muted-foreground">@{u.username}</p>}
+                          <p className="font-medium">
+                            {u.display_name || u.username || "Anonymous"}
+                          </p>
+                          {u.username && (
+                            <p className="text-xs text-muted-foreground">@{u.username}</p>
+                          )}
                         </div>
                       </div>
                     </td>
                     <td className="px-4 py-3">
-                      {u.user_roles?.some(r => r.role === "admin") ? (
-                        <Badge className="gap-1"><Shield className="h-3 w-3" /> Admin</Badge>
+                      {u.user_roles?.some((r) => r.role === "admin") ? (
+                        <Badge className="gap-1">
+                          <Shield className="h-3 w-3" /> Admin
+                        </Badge>
                       ) : (
                         <Badge variant="secondary">User</Badge>
                       )}
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">{u._follows || 0}</td>
                     <td className="px-4 py-3 text-muted-foreground">{u._bookmarks || 0}</td>
-                    <td className="px-4 py-3 text-muted-foreground">{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-muted-foreground">
+                      {new Date(u.created_at).toLocaleDateString()}
+                    </td>
                   </tr>
                 ))}
               </tbody>

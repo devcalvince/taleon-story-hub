@@ -17,7 +17,12 @@ export const Route = createFileRoute("/story/$slug")({
   },
   head: ({ params, loaderData }) => {
     if (!loaderData) {
-      return { meta: [{ title: "Story unavailable | Taleon Media" }, { name: "robots", content: "noindex" }] };
+      return {
+        meta: [
+          { title: "Story unavailable | Taleon Media" },
+          { name: "robots", content: "noindex" },
+        ],
+      };
     }
     const s = loaderData.story;
     const title = `${s.title} | Taleon Media`;
@@ -51,6 +56,7 @@ export const Route = createFileRoute("/story/$slug")({
 
 function StoryPage() {
   const { story, chapters, characters, videos, related } = Route.useLoaderData();
+  const params = Route.useParams();
   const { user } = useSession();
   const [following, setFollowing] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -58,14 +64,29 @@ function StoryPage() {
   useEffect(() => {
     track("story_view", {
       storyId: story.id,
-      metadata: { pathname: window.location.pathname },
+      metadata: {
+        pathname: window.location.pathname,
+        storySlug: params.slug,
+        storyTitle: story.title,
+        storyGenre: story.genres?.[0]?.slug ?? "",
+      },
     });
   }, [story.id]);
 
   useEffect(() => {
     if (!user) return;
-    supabase.from("follows").select("story_id").eq("story_id", story.id).maybeSingle().then(({ data }) => setFollowing(Boolean(data)));
-    supabase.from("bookmarks").select("story_id").eq("story_id", story.id).maybeSingle().then(({ data }) => setSaved(Boolean(data)));
+    supabase
+      .from("follows")
+      .select("story_id")
+      .eq("story_id", story.id)
+      .maybeSingle()
+      .then(({ data }) => setFollowing(Boolean(data)));
+    supabase
+      .from("bookmarks")
+      .select("story_id")
+      .eq("story_id", story.id)
+      .maybeSingle()
+      .then(({ data }) => setSaved(Boolean(data)));
   }, [user, story.id]);
 
   async function toggleFollow() {
@@ -74,21 +95,56 @@ function StoryPage() {
       await supabase.from("follows").delete().eq("story_id", story.id).eq("user_id", user.id);
       setFollowing(false);
     } else {
-      await supabase.from("follows").insert({ story_id: story.id, user_id: user.id });
+      const { error } = await supabase
+        .from("follows")
+        .insert({ story_id: story.id, user_id: user.id });
+      if (error) return;
       setFollowing(true);
-      track("story_follow", { storyId: story.id });
+      // Fired only after the follow succeeds.
+      track("story_follow", {
+        storyId: story.id,
+        metadata: {
+          storySlug: params.slug,
+          storyTitle: story.title,
+          storyGenre: story.genres?.[0]?.slug ?? "",
+        },
+      });
     }
   }
 
   async function toggleSave() {
     if (!user) return;
     if (saved) {
-      await supabase.from("bookmarks").delete().eq("story_id", story.id).eq("user_id", user.id);
+      const { error } = await supabase
+        .from("bookmarks")
+        .delete()
+        .eq("story_id", story.id)
+        .eq("user_id", user.id);
+      if (error) return;
       setSaved(false);
+      track("story_bookmark", {
+        storyId: story.id,
+        metadata: {
+          action: "remove",
+          storySlug: params.slug,
+          storyTitle: story.title,
+        },
+      });
     } else {
-      await supabase.from("bookmarks").insert({ story_id: story.id, user_id: user.id });
+      const { error } = await supabase
+        .from("bookmarks")
+        .insert({ story_id: story.id, user_id: user.id });
+      if (error) return;
       setSaved(true);
-      track("story_bookmark", { storyId: story.id });
+      // Fired only after the bookmark succeeds.
+      track("story_bookmark", {
+        storyId: story.id,
+        metadata: {
+          action: "add",
+          storySlug: params.slug,
+          storyTitle: story.title,
+        },
+      });
     }
   }
 
@@ -103,7 +159,11 @@ function StoryPage() {
           aria-hidden
           className="absolute inset-0 size-full object-cover opacity-35"
         />
-        <div className="absolute inset-0" style={{ background: "var(--gradient-veil)" }} aria-hidden />
+        <div
+          className="absolute inset-0"
+          style={{ background: "var(--gradient-veil)" }}
+          aria-hidden
+        />
         <div className="relative mx-auto grid max-w-7xl gap-8 px-4 py-14 sm:px-6 md:grid-cols-[260px_1fr] md:py-20">
           <img
             src={coverFor(story)}
@@ -180,11 +240,15 @@ function StoryPage() {
                     onClick={toggleSave}
                     className="flex items-center gap-2 rounded-md border border-border px-4 py-2 text-sm hover:border-border-strong"
                   >
-                    <Heart className={`size-4 ${saved ? "fill-current text-gold" : ""}`} /> {saved ? "Saved" : "Save"}
+                    <Heart className={`size-4 ${saved ? "fill-current text-gold" : ""}`} />{" "}
+                    {saved ? "Saved" : "Save"}
                   </button>
                 </>
               ) : (
-                <Link to="/login" className="rounded-md border border-border px-4 py-2 text-sm hover:border-border-strong">
+                <Link
+                  to="/login"
+                  className="rounded-md border border-border px-4 py-2 text-sm hover:border-border-strong"
+                >
                   Sign in to follow and save
                 </Link>
               )}
@@ -204,7 +268,14 @@ function StoryPage() {
             <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {characters.map((c: any) => (
                 <div key={c.id} className="panel p-5">
-                  {c.image_url && <img src={c.image_url} alt={c.name} className="mb-3 h-20 w-20 rounded-full object-cover" loading="lazy" />}
+                  {c.image_url && (
+                    <img
+                      src={c.image_url}
+                      alt={c.name}
+                      className="mb-3 h-20 w-20 rounded-full object-cover"
+                      loading="lazy"
+                    />
+                  )}
                   <p className="font-display text-lg">{c.name}</p>
                   <p className="text-xs tracking-widest text-gold uppercase">{c.role}</p>
                   <p className="mt-2 text-sm text-muted-foreground">{c.bio}</p>
@@ -335,9 +406,19 @@ function StoryVisualAssets({ storyId }: { storyId: string }) {
           <h2 className="text-2xl tracking-wide">Artwork</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {covers.map((a) => (
-              <div key={a.id} className="overflow-hidden rounded-lg border border-border bg-surface-2">
-                <img src={a.public_url} alt={a.title} className="w-full object-cover" loading="lazy" />
-                <div className="p-3"><p className="text-sm font-medium">{a.title}</p></div>
+              <div
+                key={a.id}
+                className="overflow-hidden rounded-lg border border-border bg-surface-2"
+              >
+                <img
+                  src={a.public_url}
+                  alt={a.title}
+                  className="w-full object-cover"
+                  loading="lazy"
+                />
+                <div className="p-3">
+                  <p className="text-sm font-medium">{a.title}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -348,9 +429,19 @@ function StoryVisualAssets({ storyId }: { storyId: string }) {
           <h2 className="text-2xl tracking-wide">Scenes</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {scenes.map((a) => (
-              <div key={a.id} className="overflow-hidden rounded-lg border border-border bg-surface-2">
-                <img src={a.public_url} alt={a.title} className="w-full object-cover" loading="lazy" />
-                <div className="p-3"><p className="text-sm font-medium">{a.title}</p></div>
+              <div
+                key={a.id}
+                className="overflow-hidden rounded-lg border border-border bg-surface-2"
+              >
+                <img
+                  src={a.public_url}
+                  alt={a.title}
+                  className="w-full object-cover"
+                  loading="lazy"
+                />
+                <div className="p-3">
+                  <p className="text-sm font-medium">{a.title}</p>
+                </div>
               </div>
             ))}
           </div>
@@ -361,9 +452,19 @@ function StoryVisualAssets({ storyId }: { storyId: string }) {
           <h2 className="text-2xl tracking-wide">Gallery</h2>
           <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {others.map((a) => (
-              <div key={a.id} className="overflow-hidden rounded-lg border border-border bg-surface-2">
-                <img src={a.public_url} alt={a.title} className="w-full object-cover" loading="lazy" />
-                <div className="p-2"><p className="text-xs text-muted-foreground">{a.title}</p></div>
+              <div
+                key={a.id}
+                className="overflow-hidden rounded-lg border border-border bg-surface-2"
+              >
+                <img
+                  src={a.public_url}
+                  alt={a.title}
+                  className="w-full object-cover"
+                  loading="lazy"
+                />
+                <div className="p-2">
+                  <p className="text-xs text-muted-foreground">{a.title}</p>
+                </div>
               </div>
             ))}
           </div>

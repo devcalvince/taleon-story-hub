@@ -10,7 +10,10 @@ export const Route = createFileRoute("/audio")({
   head: () => ({
     meta: [
       { title: "Audio Library | Taleon Media" },
-      { name: "description", content: "Listen to narrated Taleon chapters, audiobooks and audio drama." },
+      {
+        name: "description",
+        content: "Listen to narrated Taleon chapters, audiobooks and audio drama.",
+      },
       { property: "og:title", content: "Audio Library | Taleon Media" },
       { property: "og:description", content: "Narrated Taleon stories and audiobooks." },
       { property: "og:url", content: "/audio" },
@@ -57,7 +60,9 @@ function AudioPage() {
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{t.title}</span>
-                      <span className="block truncate text-xs text-muted-foreground">{t.subtitle}</span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {t.subtitle}
+                      </span>
                     </span>
                     <span className="text-[10px] tracking-widest text-muted-foreground uppercase">
                       {t.src ? "Play" : "Soon"}

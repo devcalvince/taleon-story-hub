@@ -14,10 +14,7 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/contacts")({
   head: () => ({
-    meta: [
-      { title: "Contact Submissions | Taleon Admin" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Contact Submissions | Taleon Admin" }, { name: "robots", content: "noindex" }],
   }),
   component: AdminContactsPage,
 });
@@ -41,16 +38,18 @@ function AdminContactsPage() {
   const { query, invalidate } = useAdminContacts();
   const submissions = (query.data ?? []) as ContactSubmission[];
 
-  const filtered = submissions.filter(s => {
+  const filtered = submissions.filter((s) => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    return s.name.toLowerCase().includes(q) ||
-           s.email.toLowerCase().includes(q) ||
-           (s.subject?.toLowerCase().includes(q)) ||
-           s.message.toLowerCase().includes(q);
+    return (
+      s.name.toLowerCase().includes(q) ||
+      s.email.toLowerCase().includes(q) ||
+      s.subject?.toLowerCase().includes(q) ||
+      s.message.toLowerCase().includes(q)
+    );
   });
 
-  const unreadCount = submissions.filter(s => s.status === "unread").length;
+  const unreadCount = submissions.filter((s) => s.status === "unread").length;
 
   const markAsReadMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -60,10 +59,10 @@ function AdminContactsPage() {
       await queryClient.cancelQueries({ queryKey: queryKeys.adminContacts });
       const previous = queryClient.getQueryData<ContactSubmission[]>(queryKeys.adminContacts);
       queryClient.setQueryData<ContactSubmission[]>(queryKeys.adminContacts, (old) =>
-        (old ?? []).map(s => s.id === id ? { ...s, status: "read" as const } : s)
+        (old ?? []).map((s) => (s.id === id ? { ...s, status: "read" as const } : s)),
       );
       if (selectedSubmission?.id === id) {
-        setSelectedSubmission(prev => prev ? { ...prev, status: "read" } : null);
+        setSelectedSubmission((prev) => (prev ? { ...prev, status: "read" } : null));
       }
       return { previous };
     },
@@ -85,10 +84,10 @@ function AdminContactsPage() {
       await queryClient.cancelQueries({ queryKey: queryKeys.adminContacts });
       const previous = queryClient.getQueryData<ContactSubmission[]>(queryKeys.adminContacts);
       queryClient.setQueryData<ContactSubmission[]>(queryKeys.adminContacts, (old) =>
-        (old ?? []).map(s => s.id === id ? { ...s, status: "replied" as const } : s)
+        (old ?? []).map((s) => (s.id === id ? { ...s, status: "replied" as const } : s)),
       );
       if (selectedSubmission?.id === id) {
-        setSelectedSubmission(prev => prev ? { ...prev, status: "replied" } : null);
+        setSelectedSubmission((prev) => (prev ? { ...prev, status: "replied" } : null));
       }
       return { previous };
     },
@@ -118,19 +117,42 @@ function AdminContactsPage() {
 
   function getStatusBadge(status: string) {
     switch (status) {
-      case "unread": return <Badge className="gap-1 bg-blue-500/10 text-blue-400"><Clock className="h-3 w-3" /> Unread</Badge>;
-      case "read": return <Badge variant="secondary" className="gap-1"><CheckCircle className="h-3 w-3" /> Read</Badge>;
-      case "replied": return <Badge className="gap-1 bg-green-500/10 text-green-400"><Reply className="h-3 w-3" /> Replied</Badge>;
-      default: return <Badge variant="secondary">{status}</Badge>;
+      case "unread":
+        return (
+          <Badge className="gap-1 bg-blue-500/10 text-blue-400">
+            <Clock className="h-3 w-3" /> Unread
+          </Badge>
+        );
+      case "read":
+        return (
+          <Badge variant="secondary" className="gap-1">
+            <CheckCircle className="h-3 w-3" /> Read
+          </Badge>
+        );
+      case "replied":
+        return (
+          <Badge className="gap-1 bg-green-500/10 text-green-400">
+            <Reply className="h-3 w-3" /> Replied
+          </Badge>
+        );
+      default:
+        return <Badge variant="secondary">{status}</Badge>;
     }
   }
 
-  if (loading) return <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">Loading…</div>;
+  if (loading)
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground sm:px-6">
+        Loading…
+      </div>
+    );
   if (!isAdmin) {
     return (
       <div className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
         <EmptyState title="Admins only" body="This area is restricted to Taleon administrators.">
-          <Link to="/account" className="rounded-md border border-border px-5 py-2.5 text-sm">Back to my library</Link>
+          <Link to="/account" className="rounded-md border border-border px-5 py-2.5 text-sm">
+            Back to my library
+          </Link>
         </EmptyState>
       </div>
     );
@@ -138,30 +160,45 @@ function AdminContactsPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Admin" title="Contact Submissions" lede={`${unreadCount} unread message${unreadCount !== 1 ? 's' : ''}.`} />
+      <PageHeader
+        eyebrow="Admin"
+        title="Contact Submissions"
+        lede={`${unreadCount} unread message${unreadCount !== 1 ? "s" : ""}.`}
+      />
       <div className="mx-auto w-full max-w-7xl space-y-6 px-4 pb-20 sm:px-6">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search submissions..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="pl-9" />
+          <Input
+            placeholder="Search submissions..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
         </div>
 
         {query.isLoading ? (
           <div className="text-center py-8 text-muted-foreground">Loading submissions...</div>
         ) : filtered.length === 0 ? (
-          <EmptyState title="No submissions" body={searchQuery ? "Try a different search." : "No contact form submissions yet."} />
+          <EmptyState
+            title="No submissions"
+            body={searchQuery ? "Try a different search." : "No contact form submissions yet."}
+          />
         ) : (
           <div className="grid gap-6 lg:grid-cols-[1fr_400px]">
             <div className="space-y-2">
               {filtered.map((s) => (
                 <button
                   key={s.id}
-                  onClick={() => { setSelectedSubmission(s); if (s.status === "unread") markAsReadMutation.mutate(s.id); }}
+                  onClick={() => {
+                    setSelectedSubmission(s);
+                    if (s.status === "unread") markAsReadMutation.mutate(s.id);
+                  }}
                   className={`w-full rounded-lg border border-border p-4 text-left transition-colors ${
                     selectedSubmission?.id === s.id
                       ? "border-gold/50 bg-surface-2"
                       : s.status === "unread"
-                      ? "bg-surface-2/60 hover:bg-surface-2"
-                      : "bg-surface-2/40 hover:bg-surface-2/60"
+                        ? "bg-surface-2/60 hover:bg-surface-2"
+                        : "bg-surface-2/40 hover:bg-surface-2/60"
                   }`}
                 >
                   <div className="flex items-start justify-between">
@@ -171,12 +208,12 @@ function AdminContactsPage() {
                         <span className="font-medium">{s.name}</span>
                         <span className="text-xs text-muted-foreground">{s.email}</span>
                       </div>
-                      {s.subject && <p className="mt-1 text-sm text-muted-foreground truncate">{s.subject}</p>}
+                      {s.subject && (
+                        <p className="mt-1 text-sm text-muted-foreground truncate">{s.subject}</p>
+                      )}
                       <p className="mt-1 text-xs text-muted-foreground truncate">{s.message}</p>
                     </div>
-                    <div className="ml-4 flex-shrink-0">
-                      {getStatusBadge(s.status)}
-                    </div>
+                    <div className="ml-4 flex-shrink-0">{getStatusBadge(s.status)}</div>
                   </div>
                 </button>
               ))}
@@ -188,7 +225,9 @@ function AdminContactsPage() {
                   <div>
                     <h3 className="font-medium">{selectedSubmission.name}</h3>
                     <p className="text-sm text-muted-foreground">{selectedSubmission.email}</p>
-                    {selectedSubmission.subject && <p className="mt-1 font-medium">{selectedSubmission.subject}</p>}
+                    {selectedSubmission.subject && (
+                      <p className="mt-1 font-medium">{selectedSubmission.subject}</p>
+                    )}
                     <p className="text-xs text-muted-foreground mt-1">
                       {new Date(selectedSubmission.created_at).toLocaleString()}
                     </p>
@@ -199,15 +238,27 @@ function AdminContactsPage() {
                   {selectedSubmission.message}
                 </div>
                 <div className="mt-6 flex gap-2">
-                  <a href={`mailto:${selectedSubmission.email}`} className="rounded-md bg-gold px-4 py-2 text-sm font-medium text-background hover:bg-gold/90">
+                  <a
+                    href={`mailto:${selectedSubmission.email}`}
+                    className="rounded-md bg-gold px-4 py-2 text-sm font-medium text-background hover:bg-gold/90"
+                  >
                     Reply via Email
                   </a>
                   {selectedSubmission.status !== "replied" && (
-                    <Button variant="outline" size="sm" onClick={() => markAsRepliedMutation.mutate(selectedSubmission.id)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => markAsRepliedMutation.mutate(selectedSubmission.id)}
+                    >
                       Mark as Replied
                     </Button>
                   )}
-                  <Button variant="outline" size="sm" onClick={() => deleteMutation.mutate(selectedSubmission.id)} className="text-red-500 hover:text-red-600">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => deleteMutation.mutate(selectedSubmission.id)}
+                    className="text-red-500 hover:text-red-600"
+                  >
                     Delete
                   </Button>
                 </div>

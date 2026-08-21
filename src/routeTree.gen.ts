@@ -44,6 +44,7 @@ import { Route as AuthenticatedAdminScenesRouteImport } from './routes/_authenti
 import { Route as AuthenticatedAdminStoriesRouteImport } from './routes/_authenticated/admin/stories'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin/users'
 import { Route as ApiAdminMediaRouteImport } from './routes/api/admin/media'
+import { Route as ApiAnalyticsRoleRouteRouteImport } from './routes/api/analytics/role/route'
 import { Route as ApiAdminMediaAssetIdRouteImport } from './routes/api/admin/media/$assetId'
 import { Route as StorySlugChapterChapterNumberRouteImport } from './routes/story.$slug.chapter.$chapterNumber'
 
@@ -231,6 +232,11 @@ const ApiAdminMediaRoute = ApiAdminMediaRouteImport.update({
   path: '/api/admin/media',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiAnalyticsRoleRouteRoute = ApiAnalyticsRoleRouteRouteImport.update({
+  id: '/api/analytics/role',
+  path: '/api/analytics/role',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdminMediaAssetIdRoute = ApiAdminMediaAssetIdRouteImport.update({
   id: '/$assetId',
   path: '/$assetId',
@@ -264,6 +270,7 @@ export interface FileRoutesByFullPath {
   '/api/contact': typeof ApiContactRoute
   '/api/newsletter': typeof ApiNewsletterRoute
   '/story/$slug': typeof StorySlugRouteWithChildren
+  '/api/analytics/role': typeof ApiAnalyticsRoleRouteRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/chapters': typeof AuthenticatedAdminChaptersRoute
   '/admin/characters': typeof AuthenticatedAdminCharactersRoute
@@ -301,6 +308,7 @@ export interface FileRoutesByTo {
   '/api/contact': typeof ApiContactRoute
   '/api/newsletter': typeof ApiNewsletterRoute
   '/story/$slug': typeof StorySlugRouteWithChildren
+  '/api/analytics/role': typeof ApiAnalyticsRoleRouteRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/chapters': typeof AuthenticatedAdminChaptersRoute
   '/admin/characters': typeof AuthenticatedAdminCharactersRoute
@@ -341,6 +349,7 @@ export interface FileRoutesById {
   '/api/contact': typeof ApiContactRoute
   '/api/newsletter': typeof ApiNewsletterRoute
   '/story/$slug': typeof StorySlugRouteWithChildren
+  '/api/analytics/role': typeof ApiAnalyticsRoleRouteRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/_authenticated/admin/chapters': typeof AuthenticatedAdminChaptersRoute
   '/_authenticated/admin/characters': typeof AuthenticatedAdminCharactersRoute
@@ -381,6 +390,7 @@ export interface FileRouteTypes {
     | '/api/contact'
     | '/api/newsletter'
     | '/story/$slug'
+    | '/api/analytics/role'
     | '/admin/analytics'
     | '/admin/chapters'
     | '/admin/characters'
@@ -418,6 +428,7 @@ export interface FileRouteTypes {
     | '/api/contact'
     | '/api/newsletter'
     | '/story/$slug'
+    | '/api/analytics/role'
     | '/admin/analytics'
     | '/admin/chapters'
     | '/admin/characters'
@@ -457,6 +468,7 @@ export interface FileRouteTypes {
     | '/api/contact'
     | '/api/newsletter'
     | '/story/$slug'
+    | '/api/analytics/role'
     | '/_authenticated/admin/analytics'
     | '/_authenticated/admin/chapters'
     | '/_authenticated/admin/characters'
@@ -495,6 +507,7 @@ export interface RootRouteChildren {
   ApiContactRoute: typeof ApiContactRoute
   ApiNewsletterRoute: typeof ApiNewsletterRoute
   StorySlugRoute: typeof StorySlugRouteWithChildren
+  ApiAnalyticsRoleRouteRoute: typeof ApiAnalyticsRoleRouteRoute
   ApiAdminMediaRoute: typeof ApiAdminMediaRouteWithChildren
 }
 
@@ -745,6 +758,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAdminMediaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/analytics/role': {
+      id: '/api/analytics/role'
+      path: '/api/analytics/role'
+      fullPath: '/api/analytics/role'
+      preLoaderRoute: typeof ApiAnalyticsRoleRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/admin/media/$assetId': {
       id: '/api/admin/media/$assetId'
       path: '/$assetId'
@@ -854,6 +874,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiContactRoute: ApiContactRoute,
   ApiNewsletterRoute: ApiNewsletterRoute,
   StorySlugRoute: StorySlugRouteWithChildren,
+  ApiAnalyticsRoleRouteRoute: ApiAnalyticsRoleRouteRoute,
   ApiAdminMediaRoute: ApiAdminMediaRouteWithChildren,
 }
 export const routeTree = rootRouteImport

@@ -1,5 +1,10 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { uploadToStorage, deleteFromStorage, buildStoragePath, sanitizeFilename } from "@/lib/storage";
+import {
+  uploadToStorage,
+  deleteFromStorage,
+  buildStoragePath,
+  sanitizeFilename,
+} from "@/lib/storage";
 import { importExternalImage, sanitizeImportFilename } from "@/lib/image-import";
 import { getActiveProvider, type GenerateRequest } from "@/lib/providers";
 
@@ -53,7 +58,7 @@ export async function uploadImageAsset(
   filename: string,
   contentType: string,
   storyId: string,
-  kind: string = "uploads"
+  kind: string = "uploads",
 ) {
   const buffer = file instanceof File ? await file.arrayBuffer() : file;
   const safe = sanitizeFilename(filename);
@@ -66,7 +71,9 @@ export async function uploadImageAsset(
   try {
     const res = await supabaseAdmin.rpc("storage.get_bucket" as any, { name: "story-assets" });
     metadata = res.data;
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
 
   const { error: updateErr } = await supabaseAdmin
     .from("media_assets")
@@ -83,11 +90,7 @@ export async function uploadImageAsset(
   return { path: result.path, publicUrl: result.publicUrl };
 }
 
-export async function importExternalUrlAsset(
-  assetId: string,
-  url: string,
-  storyId: string
-) {
+export async function importExternalUrlAsset(assetId: string, url: string, storyId: string) {
   const result = await importExternalImage(url);
   if (!result.ok) return { error: result.error };
 
@@ -167,14 +170,15 @@ export async function deleteAsset(assetId: string) {
     .single();
 
   if (asset) {
-    const paths = [asset.original_storage_path, asset.processed_storage_path, asset.thumbnail_storage_path].filter(Boolean);
+    const paths = [
+      asset.original_storage_path,
+      asset.processed_storage_path,
+      asset.thumbnail_storage_path,
+    ].filter(Boolean);
     for (const p of paths) await deleteFromStorage(p!);
   }
 
-  const { error } = await supabaseAdmin
-    .from("media_assets")
-    .delete()
-    .eq("id", assetId);
+  const { error } = await supabaseAdmin.from("media_assets").delete().eq("id", assetId);
 
   return { error };
 }
@@ -202,7 +206,8 @@ export async function getAssets(filters: {
   if (filters.locationId) query = query.eq("location_id", filters.locationId);
   if (filters.assetType) query = query.eq("asset_type", filters.assetType as any);
   if (filters.status) query = query.eq("status", filters.status as any);
-  if (filters.search) query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+  if (filters.search)
+    query = query.or(`title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
 
   const page = filters.page || 1;
   const limit = filters.limit || 24;
@@ -217,14 +222,16 @@ export async function getAssets(filters: {
 export async function getAsset(assetId: string) {
   const { data, error } = await supabaseAdmin
     .from("media_assets")
-    .select(`
+    .select(
+      `
       *,
       story:stories(id, title, slug),
       chapter:chapters(id, title, chapter_number),
       scene:scenes(id, title, scene_number),
       character:characters(id, name),
       location:locations(id, name)
-    `)
+    `,
+    )
     .eq("id", assetId)
     .single();
 

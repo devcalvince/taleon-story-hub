@@ -14,7 +14,9 @@ import { Plus, Pencil, Trash2, Film } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/admin/scenes")({
-  head: () => ({ meta: [{ title: "Scenes | Taleon Admin" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Scenes | Taleon Admin" }, { name: "robots", content: "noindex" }],
+  }),
   component: AdminScenesPage,
 });
 
@@ -88,7 +90,10 @@ function AdminScenesPage() {
   const saveMutation = useMutation({
     mutationFn: async (data: Record<string, unknown>) => {
       if (editing) {
-        const { error } = await supabase.from("scenes").update(data as any).eq("id", editing.id);
+        const { error } = await supabase
+          .from("scenes")
+          .update(data as any)
+          .eq("id", editing.id);
         if (error) throw new Error(error.message);
       } else {
         const { error } = await supabase.from("scenes").insert(data as any);
@@ -117,7 +122,10 @@ function AdminScenesPage() {
   });
 
   function handleSave() {
-    if (!formTitle.trim() || !formChapterId) { toast.error("Title and chapter required"); return; }
+    if (!formTitle.trim() || !formChapterId) {
+      toast.error("Title and chapter required");
+      return;
+    }
     saveMutation.mutate({
       chapter_id: formChapterId,
       scene_number: formNumber,
@@ -132,33 +140,72 @@ function AdminScenesPage() {
     });
   }
 
-  if (loading) return <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground">Loading…</div>;
-  if (!isAdmin) return <div className="mx-auto max-w-7xl px-4 py-24"><EmptyState title="Admins only" body="Restricted area." /></div>;
+  if (loading)
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-24 text-sm text-muted-foreground">Loading…</div>
+    );
+  if (!isAdmin)
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-24">
+        <EmptyState title="Admins only" body="Restricted area." />
+      </div>
+    );
 
   return (
     <>
-      <PageHeader eyebrow="Admin" title="Scenes" lede="Manage chapter scenes for visual production." />
+      <PageHeader
+        eyebrow="Admin"
+        title="Scenes"
+        lede="Manage chapter scenes for visual production."
+      />
       <div className="mx-auto w-full max-w-7xl space-y-6 px-4 pb-20 sm:px-6">
-        <div className="flex justify-end"><Button onClick={openCreate} className="gap-2"><Plus className="h-4 w-4" /> New Scene</Button></div>
-        {scenesQuery.isLoading ? <div className="text-center py-8 text-muted-foreground">Loading...</div>
-        : scenes.length === 0 ? <EmptyState title="No scenes" body="Create scenes to organize visual assets per chapter." />
-        : (
+        <div className="flex justify-end">
+          <Button onClick={openCreate} className="gap-2">
+            <Plus className="h-4 w-4" /> New Scene
+          </Button>
+        </div>
+        {scenesQuery.isLoading ? (
+          <div className="text-center py-8 text-muted-foreground">Loading...</div>
+        ) : scenes.length === 0 ? (
+          <EmptyState
+            title="No scenes"
+            body="Create scenes to organize visual assets per chapter."
+          />
+        ) : (
           <div className="space-y-2">
             {scenes.map((s) => (
-              <div key={s.id} className="flex items-center justify-between rounded-lg border border-border bg-surface-2 p-4">
+              <div
+                key={s.id}
+                className="flex items-center justify-between rounded-lg border border-border bg-surface-2 p-4"
+              >
                 <div className="flex items-center gap-3 min-w-0">
                   <Film className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <div className="min-w-0">
-                    <p className="font-medium truncate">Scene {s.scene_number}: {s.title}</p>
+                    <p className="font-medium truncate">
+                      Scene {s.scene_number}: {s.title}
+                    </p>
                     <p className="text-xs text-muted-foreground truncate">
-                      {s.chapters?.stories?.title} → Ch. {s.chapters?.chapter_number}: {s.chapters?.title}
+                      {s.chapters?.stories?.title} → Ch. {s.chapters?.chapter_number}:{" "}
+                      {s.chapters?.title}
                       {s.mood && ` • ${s.mood}`}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1 flex-shrink-0">
-                  <button onClick={() => openEdit(s)} className="p-1 text-muted-foreground hover:text-gold"><Pencil className="h-4 w-4" /></button>
-                  <button onClick={() => { if (confirm("Delete this scene?")) deleteMutation.mutate(s.id); }} className="p-1 text-muted-foreground hover:text-red-500"><Trash2 className="h-4 w-4" /></button>
+                  <button
+                    onClick={() => openEdit(s)}
+                    className="p-1 text-muted-foreground hover:text-gold"
+                  >
+                    <Pencil className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (confirm("Delete this scene?")) deleteMutation.mutate(s.id);
+                    }}
+                    className="p-1 text-muted-foreground hover:text-red-500"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -167,41 +214,106 @@ function AdminScenesPage() {
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader><DialogTitle>{editing ? "Edit Scene" : "Create Scene"}</DialogTitle></DialogHeader>
+            <DialogHeader>
+              <DialogTitle>{editing ? "Edit Scene" : "Create Scene"}</DialogTitle>
+            </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Chapter *</label>
-                  <select value={formChapterId} onChange={(e) => setFormChapterId(e.target.value)} className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm">
-                    {(chapters as any[]).map((c: any) => <option key={c.id} value={c.id}>Ch. {c.chapter_number}: {c.title}</option>)}
+                  <select
+                    value={formChapterId}
+                    onChange={(e) => setFormChapterId(e.target.value)}
+                    className="w-full rounded-md border border-border bg-surface-2 px-3 py-2 text-sm"
+                  >
+                    {(chapters as any[]).map((c: any) => (
+                      <option key={c.id} value={c.id}>
+                        Ch. {c.chapter_number}: {c.title}
+                      </option>
+                    ))}
                   </select>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Scene Number *</label>
-                  <Input type="number" value={formNumber} onChange={(e) => setFormNumber(parseInt(e.target.value))} />
+                  <Input
+                    type="number"
+                    value={formNumber}
+                    onChange={(e) => setFormNumber(parseInt(e.target.value))}
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Title *</label>
-                <Input value={formTitle} onChange={(e) => setFormTitle(e.target.value)} placeholder="e.g. Nairobi at 2:17 AM" />
+                <Input
+                  value={formTitle}
+                  onChange={(e) => setFormTitle(e.target.value)}
+                  placeholder="e.g. Nairobi at 2:17 AM"
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Description</label>
                 <Textarea value={formDesc} onChange={(e) => setFormDesc(e.target.value)} rows={2} />
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><label className="text-sm font-medium">Mood</label><Input value={formMood} onChange={(e) => setFormMood(e.target.value)} placeholder="e.g. tense, atmospheric" /></div>
-                <div className="space-y-2"><label className="text-sm font-medium">Location</label><Input value={formLocation} onChange={(e) => setFormLocation(e.target.value)} placeholder="e.g. Nairobi" /></div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Mood</label>
+                  <Input
+                    value={formMood}
+                    onChange={(e) => setFormMood(e.target.value)}
+                    placeholder="e.g. tense, atmospheric"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Location</label>
+                  <Input
+                    value={formLocation}
+                    onChange={(e) => setFormLocation(e.target.value)}
+                    placeholder="e.g. Nairobi"
+                  />
+                </div>
               </div>
-              <div className="space-y-2"><label className="text-sm font-medium">Characters in Scene</label><Input value={formCharacters} onChange={(e) => setFormCharacters(e.target.value)} placeholder="e.g. Amara, Detective Barasa" /></div>
-              <div className="space-y-2"><label className="text-sm font-medium">Visual Prompt</label><Textarea value={formVisualPrompt} onChange={(e) => setFormVisualPrompt(e.target.value)} rows={3} placeholder="Scene visual description for image generation" /></div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Characters in Scene</label>
+                <Input
+                  value={formCharacters}
+                  onChange={(e) => setFormCharacters(e.target.value)}
+                  placeholder="e.g. Amara, Detective Barasa"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Visual Prompt</label>
+                <Textarea
+                  value={formVisualPrompt}
+                  onChange={(e) => setFormVisualPrompt(e.target.value)}
+                  rows={3}
+                  placeholder="Scene visual description for image generation"
+                />
+              </div>
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2"><label className="text-sm font-medium">Camera Direction</label><Input value={formCamera} onChange={(e) => setFormCamera(e.target.value)} placeholder="e.g. wide shot, close-up" /></div>
-                <div className="space-y-2"><label className="text-sm font-medium">Lighting Direction</label><Input value={formLighting} onChange={(e) => setFormLighting(e.target.value)} placeholder="e.g. low-key, neon" /></div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Camera Direction</label>
+                  <Input
+                    value={formCamera}
+                    onChange={(e) => setFormCamera(e.target.value)}
+                    placeholder="e.g. wide shot, close-up"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Lighting Direction</label>
+                  <Input
+                    value={formLighting}
+                    onChange={(e) => setFormLighting(e.target.value)}
+                    placeholder="e.g. low-key, neon"
+                  />
+                </div>
               </div>
               <div className="flex justify-end gap-2 pt-4">
-                <Button variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-                <Button onClick={handleSave} disabled={saveMutation.isPending}>{saveMutation.isPending ? "Saving..." : editing ? "Update" : "Create"}</Button>
+                <Button variant="outline" onClick={() => setDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                  {saveMutation.isPending ? "Saving..." : editing ? "Update" : "Create"}
+                </Button>
               </div>
             </div>
           </DialogContent>

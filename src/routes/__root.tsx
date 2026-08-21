@@ -32,7 +32,10 @@ function NotFoundComponent() {
           >
             Go home
           </Link>
-          <Link to="/stories" className="rounded-md border border-border px-5 py-2.5 text-sm hover:border-border-strong">
+          <Link
+            to="/stories"
+            className="rounded-md border border-border px-5 py-2.5 text-sm hover:border-border-strong"
+          >
             Browse stories
           </Link>
         </div>
@@ -65,7 +68,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           >
             Try again
           </button>
-          <a href="/" className="rounded-md border border-border px-5 py-2.5 text-sm hover:border-border-strong">
+          <a
+            href="/"
+            className="rounded-md border border-border px-5 py-2.5 text-sm hover:border-border-strong"
+          >
             Go home
           </a>
         </div>

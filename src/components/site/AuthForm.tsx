@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { track } from "@/lib/analytics";
 
 export function AuthForm({ mode }: { mode: "login" | "signup" }) {
   const navigate = useNavigate();
@@ -49,19 +50,26 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
       });
       setBusy(false);
       if (err) return setError(err.message);
-      if (!data.session) return setNotice("Check your email to confirm your account, then sign in.");
+      if (!data.session)
+        return setNotice("Check your email to confirm your account, then sign in.");
+      // Fired only after successful signup. No PII — method only.
+      track("signup", { metadata: { method: "credentials" } });
       navigate({ to: "/account" });
     } else {
       const { error: err } = await supabase.auth.signInWithPassword({ email: mail, password });
       setBusy(false);
       if (err) return setError("Incorrect email or password.");
+      // Fired only after successful login. No PII — method only.
+      track("login", { metadata: { method: "credentials" } });
       navigate({ to: "/account" });
     }
   }
 
   return (
     <div className="mx-auto w-full max-w-md px-4 py-16 sm:px-6">
-      <h1 className="font-display text-3xl tracking-wide">{mode === "signup" ? "Create your account" : "Welcome back"}</h1>
+      <h1 className="font-display text-3xl tracking-wide">
+        {mode === "signup" ? "Create your account" : "Welcome back"}
+      </h1>
       <p className="mt-2 text-sm text-muted-foreground">
         {mode === "signup"
           ? "Save stories, keep your place and unlock your Taleon library."

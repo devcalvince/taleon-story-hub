@@ -20,6 +20,9 @@ dist-ssr
 .wrangler/
 .dev.vars
 
+# Local Vercel build output
+.vercel/
+
 # Environment
 .env
 .env.*

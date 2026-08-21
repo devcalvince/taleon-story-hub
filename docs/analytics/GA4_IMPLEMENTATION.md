@@ -96,15 +96,31 @@ Auth events carry only `method` (`credentials`). Form events carry only
 
 - Client-side flags (e.g. `sessionStorage.admin_session`) are **not** used and
   must never be used — client storage is manipulable.
-- Supabase actor classification remains server-authoritative
-  (`/api/analytics/role` verifies the access token and queries `user_roles`).
-- For GA4, internal traffic filtering is an **admin-side** concern:
+- Server-authoritative gating (app-side):
+  - `/api/analytics/role` verifies the caller's Supabase access token and
+    queries `user_roles`; the result is cached per user id client-side.
+  - `track()` mirrors an event to GA4 **only** when the resolved actor is
+    `public`. Admin/system events stay in Supabase diagnostics.
+  - `trackPageView()` resolves the actor before sending: authenticated admins
+    produce no GA4 `page_view` at all.
+- For defense-in-depth, GA4 admin-side filtering is also recommended:
   1. Define internal traffic (office/team IPs) in GA4 Admin → Data streams →
      Configure tag settings → Define internal traffic.
   2. Activate the "Internal Traffic" data filter.
   3. Optionally add a Developer event parameter for debugging sessions.
 - The application deliberately sends **no** `actor_type`/`admin`/`role`
   parameters to Google.
+
+## Google OAuth login tracking
+
+Credentials logins/signups are tracked explicitly in `AuthForm` after the
+request succeeds. OAuth redirects (Google) are tracked by a listener in
+`SessionProvider` on the `SIGNED_IN` auth event:
+
+- Fires only on a real sign-in event — never on render or token refresh.
+- Deduped per actual sign-in via `user id + last_sign_in_at` in localStorage.
+- OAuth providers only (credentials would double-fire with AuthForm).
+- Sends only `method` (e.g. `google`) — no tokens, emails, or names.
 
 ## Testing procedure (DebugView)
 

@@ -1,1 +1,0 @@
-import{o as e}from"./useStore-9q-mZ4EQ.js";import{t}from"./AuthForm-BH-uAvrO.js";var n=e(),r=()=>(0,n.jsx)(t,{mode:`login`});export{r as component};

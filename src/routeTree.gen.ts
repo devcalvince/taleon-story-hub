@@ -30,6 +30,7 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as ApiContactRouteImport } from './routes/api/contact'
 import { Route as ApiNewsletterRouteImport } from './routes/api/newsletter'
 import { Route as StorySlugRouteImport } from './routes/story.$slug'
+import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin/index'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin/analytics'
 import { Route as AuthenticatedAdminChaptersRouteImport } from './routes/_authenticated/admin/chapters'
 import { Route as AuthenticatedAdminCharactersRouteImport } from './routes/_authenticated/admin/characters'
@@ -149,6 +150,11 @@ const StorySlugRoute = StorySlugRouteImport.update({
   id: '/story/$slug',
   path: '/story/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
 const AuthenticatedAdminAnalyticsRoute =
   AuthenticatedAdminAnalyticsRouteImport.update({
@@ -271,6 +277,7 @@ export interface FileRoutesByFullPath {
   '/admin/stories': typeof AuthenticatedAdminStoriesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/api/admin/media': typeof ApiAdminMediaRouteWithChildren
+  '/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/admin/media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/story/$slug/chapter/$chapterNumber': typeof StorySlugChapterChapterNumberRoute
 }
@@ -291,7 +298,6 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/watch': typeof WatchRoute
   '/account': typeof AuthenticatedAccountRoute
-  '/admin': typeof AuthenticatedAdminRouteWithChildren
   '/api/contact': typeof ApiContactRoute
   '/api/newsletter': typeof ApiNewsletterRoute
   '/story/$slug': typeof StorySlugRouteWithChildren
@@ -308,6 +314,7 @@ export interface FileRoutesByTo {
   '/admin/stories': typeof AuthenticatedAdminStoriesRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/api/admin/media': typeof ApiAdminMediaRouteWithChildren
+  '/admin': typeof AuthenticatedAdminIndexRoute
   '/api/admin/media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/story/$slug/chapter/$chapterNumber': typeof StorySlugChapterChapterNumberRoute
 }
@@ -347,6 +354,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/stories': typeof AuthenticatedAdminStoriesRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/api/admin/media': typeof ApiAdminMediaRouteWithChildren
+  '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/api/admin/media/$assetId': typeof ApiAdminMediaAssetIdRoute
   '/story/$slug/chapter/$chapterNumber': typeof StorySlugChapterChapterNumberRoute
 }
@@ -386,6 +394,7 @@ export interface FileRouteTypes {
     | '/admin/stories'
     | '/admin/users'
     | '/api/admin/media'
+    | '/admin/'
     | '/api/admin/media/$assetId'
     | '/story/$slug/chapter/$chapterNumber'
   fileRoutesByTo: FileRoutesByTo
@@ -406,7 +415,6 @@ export interface FileRouteTypes {
     | '/terms'
     | '/watch'
     | '/account'
-    | '/admin'
     | '/api/contact'
     | '/api/newsletter'
     | '/story/$slug'
@@ -423,6 +431,7 @@ export interface FileRouteTypes {
     | '/admin/stories'
     | '/admin/users'
     | '/api/admin/media'
+    | '/admin'
     | '/api/admin/media/$assetId'
     | '/story/$slug/chapter/$chapterNumber'
   id:
@@ -461,6 +470,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/stories'
     | '/_authenticated/admin/users'
     | '/api/admin/media'
+    | '/_authenticated/admin/'
     | '/api/admin/media/$assetId'
     | '/story/$slug/chapter/$chapterNumber'
   fileRoutesById: FileRoutesById
@@ -637,6 +647,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StorySlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/admin/': {
+      id: '/_authenticated/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/analytics': {
       id: '/_authenticated/admin/analytics'
       path: '/analytics'
@@ -758,6 +775,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminScenesRoute: typeof AuthenticatedAdminScenesRoute
   AuthenticatedAdminStoriesRoute: typeof AuthenticatedAdminStoriesRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
+  AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
 
 const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
@@ -773,6 +791,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminScenesRoute: AuthenticatedAdminScenesRoute,
   AuthenticatedAdminStoriesRoute: AuthenticatedAdminStoriesRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
+  AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
 
 const AuthenticatedAdminRouteWithChildren =

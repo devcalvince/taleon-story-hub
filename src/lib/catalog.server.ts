@@ -159,9 +159,7 @@ export async function getChapter(slug: string, chapterNumber: number) {
   const storyWithGenre = { ...story, genre: genreSlug };
   const { data: chapters } = await db()
     .from("chapters")
-    .select(
-      "id,chapter_number,title,content,word_count,audio_url,video_url,media_asset_id,is_premium",
-    )
+    .select("id,chapter_number,title,content,word_count,audio_url,video_url,media_asset_id,is_premium")
     .eq("story_id", story.id)
     .eq("is_published", true)
     .order("chapter_number");

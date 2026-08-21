@@ -179,6 +179,17 @@ ALTER TABLE public.analytics_events
 CREATE INDEX IF NOT EXISTS idx_analytics_events_actor_type ON public.analytics_events(actor_type);
 CREATE INDEX IF NOT EXISTS idx_analytics_events_event_actor ON public.analytics_events(event_name, actor_type);
 
+-- ------------------------------------------------------------
+-- 5. CHAPTERS.MEDIA_ASSET_ID (verified missing in production)
+--    Code (getChapter / listAudio) selects this column; without it every
+--    chapter query errors and all chapter pages 404. Idempotent re-statement
+--    of the intended schema.
+-- ------------------------------------------------------------
+ALTER TABLE public.chapters
+  ADD COLUMN IF NOT EXISTS media_asset_id uuid REFERENCES public.media_assets(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_chapters_media_asset ON public.chapters(media_asset_id);
+
 GRANT INSERT ON public.newsletter_subscribers TO anon, authenticated;
 GRANT INSERT ON public.contact_submissions TO anon, authenticated;
 GRANT INSERT ON public.analytics_events TO anon, authenticated;

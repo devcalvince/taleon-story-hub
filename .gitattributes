@@ -1,0 +1,19 @@
+# Normalize all text files to LF in the repository and on checkout.
+# Prettier enforces LF; without this, Windows autocrlf checkouts produce
+# thousands of false "Delete ␍" lint errors.
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.mp3 binary
+*.mp4 binary
+*.m4a binary
+*.ogg binary
+*.woff binary
+*.woff2 binary

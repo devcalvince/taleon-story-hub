@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { rateLimit } from "@/lib/rate-limit.server";
 
 const contactSchema = z.object({
   name: z.string().min(1, "Name is required").max(100),
@@ -14,6 +15,20 @@ export const Route = createFileRoute("/api/contact")({
     handlers: {
       POST: async ({ request }) => {
         try {
+          const limit = rateLimit(request, "contact", 5);
+          if (!limit.ok) {
+            return new Response(
+              JSON.stringify({ success: false, error: "Too many submissions. Try again shortly." }),
+              {
+                status: 429,
+                headers: {
+                  "Content-Type": "application/json",
+                  "Retry-After": String(limit.retryAfter),
+                },
+              },
+            );
+          }
+
           const body = await request.json();
           const validated = contactSchema.parse(body);
 
@@ -33,12 +48,15 @@ export const Route = createFileRoute("/api/contact")({
             }),
             { status: 200, headers: { "Content-Type": "application/json" } },
           );
-        } catch (err: any) {
-          if (err.name === "ZodError") {
-            return new Response(JSON.stringify({ success: false, error: err.errors[0].message }), {
-              status: 400,
-              headers: { "Content-Type": "application/json" },
-            });
+        } catch (err) {
+          if (err instanceof z.ZodError) {
+            return new Response(
+              JSON.stringify({ success: false, error: err.issues[0]?.message ?? "Invalid input." }),
+              {
+                status: 400,
+                headers: { "Content-Type": "application/json" },
+              },
+            );
           }
           return new Response(
             JSON.stringify({ success: false, error: "Failed to submit. Please try again." }),

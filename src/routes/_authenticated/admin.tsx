@@ -1,6 +1,7 @@
 import { createFileRoute, Link, Outlet, redirect } from "@tanstack/react-router";
 import { useSession } from "@/hooks/useSession";
 import { useRealtimeAdmin } from "@/hooks/useRealtimeAdmin";
+import { supabase } from "@/integrations/supabase/client";
 import { EmptyState } from "@/components/site/Section";
 import {
   BarChart3,
@@ -17,6 +18,26 @@ import {
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/admin")({
+  // Authorization BEFORE the admin interface renders: verify the session and
+  // the admin role via Supabase (RLS-protected user_roles read with the
+  // caller's own token). Non-admins are redirected, not shown a gate page.
+  // The component-level check below remains as defense-in-depth, and all
+  // admin APIs keep their server-side requireAdmin() guard.
+  beforeLoad: async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) throw redirect({ to: "/login" });
+
+    const { data: roleRow } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (!roleRow) throw redirect({ to: "/account" });
+  },
   head: () => ({
     meta: [
       { title: "Admin | Taleon Media" },
@@ -115,7 +136,17 @@ const NAV_ITEMS = [
 function AdminLayout() {
   const { isAdmin, loading } = useSession();
 
-  useRealtimeAdmin(["stories", "chapters", "profiles", "analytics_events"]);
+  useRealtimeAdmin([
+    "stories",
+    "chapters",
+    "genres",
+    "characters",
+    "locations",
+    "scenes",
+    "media_assets",
+    "profiles",
+    "analytics_events",
+  ]);
 
   if (loading) {
     return (

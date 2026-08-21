@@ -546,6 +546,16 @@ export type Database = {
           source_type: Database["public"]["Enums"]["source_type"];
           source_url: string | null;
           status: Database["public"]["Enums"]["asset_status"];
+          storage_provider: Database["public"]["Enums"]["storage_provider"] | null;
+          storage_bucket: string | null;
+          storage_path: string | null;
+          mime_type: string | null;
+          duration: number | null;
+          bitrate: number | null;
+          thumbnail_url: string | null;
+          original_filename: string | null;
+          checksum: string | null;
+          uploaded_by: string | null;
           story_id: string | null;
           thumbnail_storage_path: string | null;
           title: string;
@@ -579,6 +589,16 @@ export type Database = {
           source_type?: Database["public"]["Enums"]["source_type"];
           source_url?: string | null;
           status?: Database["public"]["Enums"]["asset_status"];
+          storage_provider?: Database["public"]["Enums"]["storage_provider"] | null;
+          storage_bucket?: string | null;
+          storage_path?: string | null;
+          mime_type?: string | null;
+          duration?: number | null;
+          bitrate?: number | null;
+          thumbnail_url?: string | null;
+          original_filename?: string | null;
+          checksum?: string | null;
+          uploaded_by?: string | null;
           story_id?: string | null;
           thumbnail_storage_path?: string | null;
           title: string;
@@ -612,6 +632,16 @@ export type Database = {
           source_type?: Database["public"]["Enums"]["source_type"];
           source_url?: string | null;
           status?: Database["public"]["Enums"]["asset_status"];
+          storage_provider?: Database["public"]["Enums"]["storage_provider"] | null;
+          storage_bucket?: string | null;
+          storage_path?: string | null;
+          mime_type?: string | null;
+          duration?: number | null;
+          bitrate?: number | null;
+          thumbnail_url?: string | null;
+          original_filename?: string | null;
+          checksum?: string | null;
+          uploaded_by?: string | null;
           story_id?: string | null;
           thumbnail_storage_path?: string | null;
           title?: string;
@@ -1062,6 +1092,8 @@ export type Database = {
     };
     Enums: {
       app_role: "admin" | "moderator" | "user";
+      analytics_actor_type: "public" | "admin" | "system";
+      storage_provider: "supabase" | "cloudflare_r2" | "aws_s3" | "external";
       asset_status:
         | "draft"
         | "processing"

@@ -8,7 +8,9 @@ export const Route = createFileRoute("/api/admin/media/$assetId")({
     handlers: {
       POST: async ({ request, params }) => {
         try {
-          await requireAdmin(request);
+          // Approver identity comes from the verified session — never from
+          // the request body.
+          const admin = await requireAdmin(request);
           const { assetId } = params;
           const body = await request.json();
           const action = body.action;
@@ -19,7 +21,7 @@ export const Route = createFileRoute("/api/admin/media/$assetId")({
               .update({
                 status: "approved" as any,
                 approved: true,
-                approved_by: body.userId,
+                approved_by: admin.id,
                 approved_at: new Date().toISOString(),
               } as any)
               .eq("id", assetId);
@@ -72,17 +74,25 @@ export const Route = createFileRoute("/api/admin/media/$assetId")({
 
           const { data: asset } = await supabaseAdmin
             .from("media_assets")
-            .select("original_storage_path, processed_storage_path, thumbnail_storage_path")
+            .select(
+              "original_storage_path, processed_storage_path, thumbnail_storage_path, storage_bucket",
+            )
             .eq("id", assetId)
             .single();
 
           if (asset) {
+            // Delete each object from the bucket the asset actually lives in
+            // (story-assets / story-audio / story-video) — never assume the
+            // default bucket.
+            const bucket = asset.storage_bucket || "story-assets";
             const paths = [
               asset.original_storage_path,
               asset.processed_storage_path,
               asset.thumbnail_storage_path,
             ].filter(Boolean);
-            for (const p of paths) await deleteFromStorage(p!);
+            for (const p of paths) {
+              await deleteFromStorage(p!, bucket).catch(() => undefined);
+            }
           }
 
           const { error } = await supabaseAdmin.from("media_assets").delete().eq("id", assetId);

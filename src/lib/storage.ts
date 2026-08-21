@@ -1,6 +1,11 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { getStorageProvider } from "@/lib/storage-adapter";
-import type { StorageProvider, UploadOptions, UploadResult, DeleteResult } from "@/lib/storage-types";
+import type {
+  StorageProvider,
+  UploadOptions,
+  UploadResult,
+  DeleteResult,
+} from "@/lib/storage-types";
 
 const IMAGE_BUCKET = "story-assets";
 const AUDIO_BUCKET = "story-audio";
@@ -48,12 +53,10 @@ export function buildStoragePath(p: StoragePath): string {
   else if (p.kind === "audio") {
     parts.push("audio");
     if (p.chapterId) parts.push(`chapters/${p.chapterId}`);
-  }
-  else if (p.kind === "video") {
+  } else if (p.kind === "video") {
     parts.push("video");
     if (p.chapterId) parts.push(`chapters/${p.chapterId}`);
-  }
-  else if (p.chapterId) {
+  } else if (p.chapterId) {
     parts.push(`chapters/${p.chapterId}`);
     if (p.kind === "scenes" && p.sceneId) parts.push(`scenes/${p.sceneId}`);
   }
@@ -74,10 +77,10 @@ export function sanitizeFilename(raw: string): string {
 export function validateFileUpload(
   file: File | ArrayBuffer,
   filename: string,
-  type: "image" | "audio" | "video"
+  type: "image" | "audio" | "video",
 ): { valid: boolean; error?: string } {
   const name = filename.toLowerCase();
-  
+
   if (type === "image") {
     const ext = name.split(".").pop() || "";
     if (!["jpg", "jpeg", "png", "webp", "avif"].includes(ext)) {
@@ -118,22 +121,34 @@ export function validateFileUpload(
 
 export async function detectMimeType(buffer: ArrayBuffer): Promise<string | null> {
   const bytes = new Uint8Array(buffer.slice(0, 16));
-  
+
   if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
-  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47) return "image/png";
-  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46) return "image/webp";
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47)
+    return "image/png";
+  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46)
+    return "image/webp";
   if (bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) return "audio/mpeg";
   if (bytes[0] === 0x66 && bytes[1] === 0x74 && bytes[2] === 0x79 && bytes[3] === 0x70) {
     const brand = new TextDecoder().decode(bytes.slice(4, 12));
-    if (brand.includes("mp4") || brand.includes("m4a") || brand.includes("isom")) return "audio/mp4";
+    if (brand.includes("mp4") || brand.includes("m4a") || brand.includes("isom"))
+      return "audio/mp4";
     if (brand.includes("qt")) return "video/quicktime";
   }
-  if (bytes[0] === 0x00 && bytes[1] === 0x00 && bytes[2] === 0x00 && bytes[3] === 0x1c &&
-      bytes[4] === 0x66 && bytes[5] === 0x74 && bytes[6] === 0x79 && bytes[7] === 0x70) {
+  if (
+    bytes[0] === 0x00 &&
+    bytes[1] === 0x00 &&
+    bytes[2] === 0x00 &&
+    bytes[3] === 0x1c &&
+    bytes[4] === 0x66 &&
+    bytes[5] === 0x74 &&
+    bytes[6] === 0x79 &&
+    bytes[7] === 0x70
+  ) {
     return "video/mp4";
   }
-  if (bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3) return "video/webm";
-  
+  if (bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3)
+    return "video/webm";
+
   return null;
 }
 
@@ -142,7 +157,7 @@ export async function uploadAsset(
   path: string,
   data: ArrayBuffer | Blob,
   contentType: string,
-  options?: { upsert?: boolean; cacheControl?: string }
+  options?: { upsert?: boolean; cacheControl?: string },
 ): Promise<UploadResult> {
   const provider = getStorageProvider();
   return provider.upload({
@@ -165,7 +180,7 @@ export async function replaceAsset(
   bucket: string,
   newPath: string,
   data: ArrayBuffer | Blob,
-  contentType: string
+  contentType: string,
 ): Promise<UploadResult> {
   const provider = getStorageProvider();
   return provider.replace(oldPath, { bucket, path: newPath, data, contentType });
@@ -174,13 +189,13 @@ export async function replaceAsset(
 export async function getAssetPublicUrl(path: string): Promise<string | null> {
   const provider = getStorageProvider();
   const result = provider.getPublicUrl(path);
-  return result.success ? result.url ?? null : null;
+  return result.success ? (result.url ?? null) : null;
 }
 
 export async function getAssetSignedUrl(path: string, expiresIn = 3600): Promise<string | null> {
   const provider = getStorageProvider();
   const result = await provider.getSignedUrl(path, expiresIn);
-  return result.success ? result.url ?? null : null;
+  return result.success ? (result.url ?? null) : null;
 }
 
 export async function ensureBuckets(): Promise<void> {
@@ -221,8 +236,8 @@ export async function uploadToStorage(
   path: string,
   data: ArrayBuffer,
   contentType: string,
+  bucket: string = BUCKET,
 ): Promise<{ path: string; publicUrl: string } | { error: string }> {
-  const bucket = BUCKET; // Use the default story-assets bucket
   await ensureBucket(bucket);
 
   const { error } = await supabaseAdmin.storage.from(bucket).upload(path, data, {
@@ -237,7 +252,124 @@ export async function uploadToStorage(
   return { path, publicUrl: urlData.publicUrl };
 }
 
-export async function deleteFromStorage(path: string): Promise<void> {
-  const bucket = BUCKET; // Use the default story-assets bucket
+export async function deleteFromStorage(path: string, bucket: string = BUCKET): Promise<void> {
   await supabaseAdmin.storage.from(bucket).remove([path]);
+}
+
+/**
+ * Full server-side upload validation for the direct-upload path.
+ *
+ * Combines every check that previously existed only as unused helpers:
+ * extension allowlist, declared-MIME allowlist, hard size limit (checked
+ * BEFORE the body is buffered by the caller), and magic-byte sniffing with
+ * declared-vs-actual MIME consistency.
+ */
+export function validateMediaUpload(opts: {
+  buffer: ArrayBuffer;
+  filename: string;
+  declaredMime: string;
+  assetType: string;
+}): { ok: true; detectedMime: string } | { ok: false; error: string } {
+  const { buffer, filename, declaredMime, assetType } = opts;
+
+  // 1. Asset type must be a known enum value.
+  const ASSET_TYPES = [
+    "cover",
+    "scene",
+    "character",
+    "location",
+    "thumbnail",
+    "banner",
+    "poster",
+    "social_vertical",
+    "social_square",
+    "youtube_thumbnail",
+    "story_cinematic",
+    "story_cover",
+    "illustration",
+    "background",
+    "audio",
+    "video",
+    "social_video",
+    "other",
+  ];
+  if (!ASSET_TYPES.includes(assetType)) {
+    return { ok: false, error: "Unsupported asset type." };
+  }
+
+  // 2. Size limit per asset class — enforced before callers buffer large bodies.
+  const maxSize = getMaxSizeForAssetType(assetType);
+  if (buffer.byteLength > maxSize) {
+    return {
+      ok: false,
+      error: `File exceeds ${Math.round(maxSize / 1024 / 1024)} MB limit.`,
+    };
+  }
+  if (buffer.byteLength === 0) {
+    return { ok: false, error: "Empty file." };
+  }
+
+  // 3. Extension allowlist.
+  const extResult = validateFileUpload(buffer, filename, kindOf(assetType));
+  if (!extResult.valid) return { ok: false, error: extResult.error ?? "Invalid file." };
+
+  // 4. Magic-byte sniffing — never trust the client-declared MIME.
+  let detected: string | null = null;
+  try {
+    detected = detectMimeTypeSync(buffer);
+  } catch {
+    detected = null;
+  }
+  if (!detected) {
+    return { ok: false, error: "Unrecognized file content. Upload rejected." };
+  }
+
+  // 5. Detected MIME must be allowed for this asset class…
+  const allowed = getAllowedTypesForAssetType(assetType);
+  if (!allowed.includes(detected)) {
+    return {
+      ok: false,
+      error: `Content does not match an allowed format for ${assetType} assets.`,
+    };
+  }
+
+  // 6. …and must be consistent with what the client declared (when it did).
+  if (
+    declaredMime &&
+    declaredMime !== "application/octet-stream" &&
+    declaredMime !== detected &&
+    !(detected === "audio/mp4" && declaredMime === "video/mp4")
+  ) {
+    return { ok: false, error: "Declared file type does not match file contents." };
+  }
+
+  return { ok: true, detectedMime: detected };
+}
+
+function kindOf(assetType: string): "image" | "audio" | "video" {
+  if (assetType === "audio") return "audio";
+  if (assetType === "video" || assetType === "social_video") return "video";
+  return "image";
+}
+
+/** Synchronous magic-byte sniffer (detectMimeType without needless async). */
+function detectMimeTypeSync(buffer: ArrayBuffer): string | null {
+  const bytes = new Uint8Array(buffer.slice(0, 16));
+
+  if (bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff) return "image/jpeg";
+  if (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4e && bytes[3] === 0x47)
+    return "image/png";
+  if (bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46)
+    return "image/webp";
+  if (bytes[0] === 0x49 && bytes[1] === 0x44 && bytes[2] === 0x33) return "audio/mpeg";
+  if (bytes[0] === 0x66 && bytes[1] === 0x74 && bytes[2] === 0x79 && bytes[3] === 0x70) {
+    const brand = new TextDecoder().decode(bytes.slice(4, 12));
+    if (brand.includes("mp4") || brand.includes("m4a") || brand.includes("isom"))
+      return "audio/mp4";
+    if (brand.includes("qt")) return "video/quicktime";
+  }
+  if (bytes[0] === 0x1a && bytes[1] === 0x45 && bytes[2] === 0xdf && bytes[3] === 0xa3)
+    return "video/webm";
+
+  return null;
 }

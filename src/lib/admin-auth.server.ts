@@ -69,3 +69,47 @@ export async function requireAdmin(request: Request): Promise<AdminUser> {
 
   return { id: user.id, email: user.email ?? "" };
 }
+
+/**
+ * Resolve the verified session user from a request (Bearer token or
+ * Supabase auth cookie) WITHOUT requiring admin. Returns null when the
+ * caller is anonymous or the token is invalid.
+ */
+export async function getSessionUser(request: Request): Promise<AdminUser | null> {
+  const token = extractToken(request);
+  if (!token) return null;
+
+  const supabase = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+    global: {
+      headers: { Authorization: `Bearer ${token}` },
+    },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser(token);
+  if (error || !user) return null;
+
+  return { id: user.id, email: user.email ?? "" };
+}
+
+/**
+ * Check whether the verified session user holds the admin role.
+ * Uses the user's own token so RLS applies; no service-role involved.
+ */
+export async function isVerifiedAdmin(userId: string): Promise<boolean> {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    return Boolean(data);
+  } catch {
+    return false;
+  }
+}

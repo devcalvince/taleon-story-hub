@@ -1,20 +1,54 @@
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/webp", "image/avif"];
 const FETCH_TIMEOUT = 30000;
+const MAX_REDIRECTS = 4;
 
 function isPrivateIp(hostname: string): boolean {
+  const h = hostname.toLowerCase();
+
+  // Hostname-based blocks.
   if (
-    hostname === "localhost" ||
-    hostname === "127.0.0.1" ||
-    hostname === "::1" ||
-    hostname === "::ffff:127.0.0.1"
+    h === "localhost" ||
+    h.endsWith(".localhost") ||
+    h.endsWith(".local") ||
+    h.endsWith(".internal")
   )
     return true;
-  if (/^10\./.test(hostname)) return true;
-  if (/^172\.(1[6-9]|2\d|3[01])\./.test(hostname)) return true;
-  if (/^192\.168\./.test(hostname)) return true;
-  if (/^169\.254\./.test(hostname)) return true;
+
+  // IPv6 loopback / link-local / unique-local / IPv4-mapped.
+  if (h === "::1" || h === "::" || h === "::ffff:127.0.0.1") return true;
+  if (h.startsWith("fc") || h.startsWith("fd")) return true; // fc00::/7
+  if (h.startsWith("fe8") || h.startsWith("fe9") || h.startsWith("fea") || h.startsWith("feb"))
+    return true; // fe80::/10
+  if (h.startsWith("::ffff:")) return isPrivateIp(h.slice(7)); // mapped IPv4
+
+  // IPv4 (also matches bracketless v6-embedded forms).
+  if (/^127\./.test(h)) return true; // entire loopback range
+  if (/^0\./.test(h)) return true; // "this network"
+  if (/^10\./.test(h)) return true;
+  if (/^169\.254\./.test(h)) return true; // link-local incl. cloud metadata
+  if (/^192\.168\./.test(h)) return true;
+  if (/^192\.0\.0\./.test(h)) return true;
+  if (/^198\.1[89]\./.test(h)) return true; // benchmarking
+  if (/^100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\./.test(h)) return true; // CGNAT
+  if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return true;
+
   return false;
+}
+
+/** Validate any hop (initial URL or redirect target) before requesting it. */
+function validateHop(u: URL): string | null {
+  if (u.protocol !== "http:" && u.protocol !== "https:") {
+    return "Only HTTP/HTTPS URLs are allowed.";
+  }
+  if (isPrivateIp(u.hostname)) {
+    return "Private/local URLs are not allowed.";
+  }
+  // Credentials embedded in URLs are never legitimate for image sources.
+  if (u.username || u.password) {
+    return "URLs with embedded credentials are not allowed.";
+  }
+  return null;
 }
 
 export type ImportResult =
@@ -32,43 +66,73 @@ export type ImportResult =
       error: string;
     };
 
-export async function importExternalImage(url: string): Promise<ImportResult> {
-  let parsed: URL;
+export async function importExternalImage(rawUrl: string): Promise<ImportResult> {
+  let current: URL;
   try {
-    parsed = new URL(url);
+    current = new URL(rawUrl);
   } catch {
     return { ok: false, error: "Invalid URL format." };
   }
 
-  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
-    return { ok: false, error: "Only HTTP/HTTPS URLs are allowed." };
-  }
-
-  if (isPrivateIp(parsed.hostname)) {
-    return { ok: false, error: "Private/local URLs are not allowed." };
-  }
+  // Validate the initial hop.
+  const initialError = validateHop(current);
+  if (initialError) return { ok: false, error: initialError };
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT);
 
   let response: Response;
   try {
-    response = await fetch(parsed.toString(), {
-      signal: controller.signal,
-      headers: { "User-Agent": "TaleonMedia/1.0" },
-    });
-  } catch (e: any) {
+    // Follow redirects MANUALLY so every hop is validated before it is
+    // requested — a public host must not be able to bounce us at cloud
+    // metadata endpoints or internal services.
+    for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
+      response = await fetch(current.toString(), {
+        signal: controller.signal,
+        redirect: "manual",
+        headers: { "User-Agent": "TaleonMedia/1.0" },
+      });
+
+      if (response.status >= 300 && response.status < 400) {
+        const location = response.headers.get("location");
+        if (!location) {
+          clearTimeout(timer);
+          return { ok: false, error: "Redirect without a Location header." };
+        }
+        let next: URL;
+        try {
+          next = new URL(location, current);
+        } catch {
+          clearTimeout(timer);
+          return { ok: false, error: "Invalid redirect target." };
+        }
+        const hopError = validateHop(next);
+        if (hopError) {
+          clearTimeout(timer);
+          return { ok: false, error: `Redirect blocked: ${hopError}` };
+        }
+        current = next;
+        continue;
+      }
+
+      break;
+    }
+  } catch (e) {
     clearTimeout(timer);
-    return { ok: false, error: `Failed to fetch: ${e.message || "network error"}` };
+    const message = e instanceof Error ? e.message : "network error";
+    return { ok: false, error: `Failed to fetch: ${message}` };
   }
   clearTimeout(timer);
 
-  if (!response.ok) {
-    return { ok: false, error: `HTTP ${response.status}: ${response.statusText}` };
+  if (!response!.ok) {
+    return {
+      ok: false,
+      error: `HTTP ${response!.status}: ${response!.statusText}`,
+    };
   }
 
-  const contentType = response.headers.get("content-type") || "";
-  const clHeader = response.headers.get("content-length");
+  const contentType = response!.headers.get("content-type") || "";
+  const clHeader = response!.headers.get("content-length");
   if (clHeader && parseInt(clHeader, 10) > MAX_FILE_SIZE) {
     return { ok: false, error: "Image exceeds 15 MB limit." };
   }
@@ -77,7 +141,7 @@ export async function importExternalImage(url: string): Promise<ImportResult> {
     return { ok: false, error: `Unsupported image format. Allowed: JPEG, PNG, WEBP, AVIF.` };
   }
 
-  const buffer = await response.arrayBuffer();
+  const buffer = await response!.arrayBuffer();
   if (buffer.byteLength > MAX_FILE_SIZE) {
     return { ok: false, error: "Image exceeds 15 MB limit." };
   }

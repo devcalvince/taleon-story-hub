@@ -6,6 +6,9 @@ type Table =
   | "stories"
   | "chapters"
   | "genres"
+  | "characters"
+  | "locations"
+  | "scenes"
   | "media_assets"
   | "analytics_events"
   | "newsletter_subscribers"
@@ -23,6 +26,9 @@ const TABLE_INVALIDATION_MAP: Record<Table, string[][]> = {
     ["chapter"],
   ],
   genres: [["admin", "genres"], ["genres"], ["stories"], ["home"]],
+  characters: [["admin", "characters"], ["story"]],
+  locations: [["admin", "locations"], ["story"]],
+  scenes: [["admin", "scenes"], ["story"], ["chapter"]],
   media_assets: [["admin", "media"]],
   analytics_events: [["admin", "analytics"]],
   newsletter_subscribers: [["admin", "newsletter"]],

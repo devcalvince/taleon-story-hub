@@ -1,7 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { requireAdmin } from "@/lib/admin-auth.server";
-import { uploadToStorage, buildStoragePath, sanitizeFilename, ensureBucket, ensureBuckets } from "@/lib/storage";
+import {
+  uploadToStorage,
+  buildStoragePath,
+  sanitizeFilename,
+  ensureBucket,
+  validateMediaUpload,
+  getBucketForAssetType,
+  deleteFromStorage,
+} from "@/lib/storage";
 import { importExternalImage, sanitizeImportFilename } from "@/lib/image-import";
 
 export const Route = createFileRoute("/api/admin/media")({
@@ -9,7 +17,9 @@ export const Route = createFileRoute("/api/admin/media")({
     handlers: {
       POST: async ({ request }) => {
         try {
-          await requireAdmin(request);
+          // Verified admin identity — used for created_by/uploaded_by.
+          // Client-supplied user IDs are never trusted for attribution.
+          const admin = await requireAdmin(request);
           const formData = await request.formData();
           const action = formData.get("action") as string;
 
@@ -31,12 +41,37 @@ export const Route = createFileRoute("/api/admin/media")({
               });
             }
 
+            // Size gate BEFORE buffering the body into memory.
+            if (file.size <= 0) {
+              return new Response(JSON.stringify({ error: "Empty file." }), { status: 400 });
+            }
+
             const buffer = await file.arrayBuffer();
             const safe = sanitizeFilename(file.name);
-            const path = buildStoragePath({ storyId, kind: "uploads", filename: safe });
-            const bucket = "story-assets";
+
+            // Full server-side validation: extension, declared MIME,
+            // magic-byte content sniffing, size limit, asset-type allowlist.
+            const validation = validateMediaUpload({
+              buffer,
+              filename: safe,
+              declaredMime: file.type,
+              assetType,
+            });
+            if (!validation.ok) {
+              return new Response(JSON.stringify({ error: validation.error }), { status: 400 });
+            }
+
+            // Bucket follows the asset class (images / audio / video).
+            const bucket = getBucketForAssetType(assetType);
+            const pathProps: Parameters<typeof buildStoragePath>[0] = {
+              storyId,
+              kind: assetType === "audio" ? "audio" : assetType === "video" ? "video" : "uploads",
+              filename: safe,
+            };
+            if (chapterId) pathProps.chapterId = chapterId;
+            const path = buildStoragePath(pathProps);
             await ensureBucket(bucket);
-            const upload = await uploadToStorage(path, buffer, file.type);
+            const upload = await uploadToStorage(path, buffer, validation.detectedMime, bucket);
             if ("error" in upload) {
               return new Response(JSON.stringify({ error: upload.error }), { status: 500 });
             }
@@ -55,15 +90,24 @@ export const Route = createFileRoute("/api/admin/media")({
                 prompt,
                 source_type: "upload",
                 original_storage_path: upload.path,
+                storage_bucket: bucket,
+                storage_path: upload.path,
+                mime_type: validation.detectedMime,
+                file_size: buffer.byteLength,
                 public_url: upload.publicUrl,
                 status: "ready",
                 version: 1,
                 approved: false,
+                created_by: admin.id,
+                uploaded_by: admin.id,
               } as any)
               .select()
               .single();
 
             if (insertErr) {
+              // DB write failed after a successful storage upload — remove the
+              // object so orphans do not accumulate.
+              await deleteFromStorage(upload.path, bucket).catch(() => undefined);
               return new Response(JSON.stringify({ error: insertErr.message }), { status: 500 });
             }
 
@@ -117,19 +161,26 @@ export const Route = createFileRoute("/api/admin/media")({
                 source_type: "external_url",
                 source_url: url,
                 original_storage_path: upload.path,
+                storage_bucket: "story-assets",
+                storage_path: upload.path,
+                mime_type: imported.contentType,
+                file_size: imported.fileSize,
                 public_url: upload.publicUrl,
                 width: imported.width || null,
                 height: imported.height || null,
                 format: imported.format,
-                file_size: imported.fileSize,
                 status: "ready",
                 version: 1,
                 approved: false,
+                created_by: admin.id,
+                uploaded_by: admin.id,
               } as any)
               .select()
               .single();
 
             if (insertErr) {
+              // Cleanup on failed DB write (orphan prevention).
+              await deleteFromStorage(upload.path, "story-assets").catch(() => undefined);
               return new Response(JSON.stringify({ error: insertErr.message }), { status: 500 });
             }
 
@@ -171,7 +222,14 @@ export const Route = createFileRoute("/api/admin/media")({
           if (locationId) query = query.eq("location_id", locationId);
           if (assetType) query = query.eq("asset_type", assetType as any);
           if (status) query = query.eq("status", status as any);
-          if (search) query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%`);
+          if (search) {
+            // Escape PostgREST filter metacharacters — the value is spliced
+            // into an or() filter string, not a parameterized value.
+            const safeSearch = search.replace(/[%,()]/g, " ").trim();
+            if (safeSearch) {
+              query = query.or(`title.ilike.%${safeSearch}%,description.ilike.%${safeSearch}%`);
+            }
+          }
 
           const from = (page - 1) * limit;
           query = query.order("created_at", { ascending: false }).range(from, from + limit - 1);

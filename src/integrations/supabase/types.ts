@@ -16,29 +16,47 @@ export type Database = {
     Tables: {
       analytics_events: {
         Row: {
+          anonymous_id: string | null
+          attribution: Json
           chapter_id: string | null
+          country: string | null
           created_at: string
+          device: string | null
           event_name: string
+          funnel_stage: string | null
           id: number
           metadata: Json
+          referrer: string | null
           story_id: string | null
           user_id: string | null
         }
         Insert: {
+          anonymous_id?: string | null
+          attribution?: Json
           chapter_id?: string | null
+          country?: string | null
           created_at?: string
+          device?: string | null
           event_name: string
+          funnel_stage?: string | null
           id?: number
           metadata?: Json
+          referrer?: string | null
           story_id?: string | null
           user_id?: string | null
         }
         Update: {
+          anonymous_id?: string | null
+          attribution?: Json
           chapter_id?: string | null
+          country?: string | null
           created_at?: string
+          device?: string | null
           event_name?: string
+          funnel_stage?: string | null
           id?: number
           metadata?: Json
+          referrer?: string | null
           story_id?: string | null
           user_id?: string | null
         }
@@ -150,34 +168,55 @@ export type Database = {
       }
       characters: {
         Row: {
+          age: string | null
+          appearance: string | null
           bio: string | null
+          clothing: string | null
           created_at: string
           id: string
           image_url: string | null
           name: string
+          notes: string | null
+          personality: string | null
+          reference_image_url: string | null
           role: string | null
           sort_order: number
           story_id: string
+          visual_prompt: string | null
         }
         Insert: {
+          age?: string | null
+          appearance?: string | null
           bio?: string | null
+          clothing?: string | null
           created_at?: string
           id?: string
           image_url?: string | null
           name: string
+          notes?: string | null
+          personality?: string | null
+          reference_image_url?: string | null
           role?: string | null
           sort_order?: number
           story_id: string
+          visual_prompt?: string | null
         }
         Update: {
+          age?: string | null
+          appearance?: string | null
           bio?: string | null
+          clothing?: string | null
           created_at?: string
           id?: string
           image_url?: string | null
           name?: string
+          notes?: string | null
+          personality?: string | null
+          reference_image_url?: string | null
           role?: string | null
           sort_order?: number
           story_id?: string
+          visual_prompt?: string | null
         }
         Relationships: [
           {
@@ -188,6 +227,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      contact_submissions: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          message: string
+          name: string
+          status: string
+          subject: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id?: string
+          message: string
+          name: string
+          status?: string
+          subject?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          message?: string
+          name?: string
+          status?: string
+          subject?: string | null
+        }
+        Relationships: []
       }
       follows: {
         Row: {
@@ -208,6 +277,104 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "follows_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generation_jobs: {
+        Row: {
+          actual_cost: number | null
+          chapter_id: string | null
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          currency: string | null
+          error_message: string | null
+          estimated_cost: number | null
+          generation_duration_ms: number | null
+          id: string
+          media_asset_id: string | null
+          model: string | null
+          progress: number | null
+          prompt: string
+          provider: string
+          scene_id: string | null
+          started_at: string | null
+          status: Database["public"]["Enums"]["generation_job_status"]
+          story_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          actual_cost?: number | null
+          chapter_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          error_message?: string | null
+          estimated_cost?: number | null
+          generation_duration_ms?: number | null
+          id?: string
+          media_asset_id?: string | null
+          model?: string | null
+          progress?: number | null
+          prompt: string
+          provider?: string
+          scene_id?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["generation_job_status"]
+          story_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          actual_cost?: number | null
+          chapter_id?: string | null
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string | null
+          error_message?: string | null
+          estimated_cost?: number | null
+          generation_duration_ms?: number | null
+          id?: string
+          media_asset_id?: string | null
+          model?: string | null
+          progress?: number | null
+          prompt?: string
+          provider?: string
+          scene_id?: string | null
+          started_at?: string | null
+          status?: Database["public"]["Enums"]["generation_job_status"]
+          story_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generation_jobs_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generation_jobs_media_asset_id_fkey"
+            columns: ["media_asset_id"]
+            isOneToOne: false
+            referencedRelation: "media_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generation_jobs_scene_id_fkey"
+            columns: ["scene_id"]
+            isOneToOne: false
+            referencedRelation: "scenes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "generation_jobs_story_id_fkey"
             columns: ["story_id"]
             isOneToOne: false
             referencedRelation: "stories"
@@ -287,6 +454,230 @@ export type Database = {
           },
         ]
       }
+      locations: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          notes: string | null
+          reference_image_url: string | null
+          story_id: string
+          updated_at: string
+          visual_prompt: string | null
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          reference_image_url?: string | null
+          story_id: string
+          updated_at?: string
+          visual_prompt?: string | null
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          reference_image_url?: string | null
+          story_id?: string
+          updated_at?: string
+          visual_prompt?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "locations_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      media_assets: {
+        Row: {
+          approved: boolean
+          approved_at: string | null
+          approved_by: string | null
+          asset_type: Database["public"]["Enums"]["asset_type"]
+          chapter_id: string | null
+          character_id: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          file_size: number | null
+          format: string | null
+          height: number | null
+          id: string
+          location_id: string | null
+          model: string | null
+          negative_prompt: string | null
+          original_storage_path: string | null
+          processed_storage_path: string | null
+          prompt: string | null
+          provider: string
+          public_url: string | null
+          scene_id: string | null
+          source_type: Database["public"]["Enums"]["source_type"]
+          source_url: string | null
+          status: Database["public"]["Enums"]["asset_status"]
+          story_id: string | null
+          thumbnail_storage_path: string | null
+          title: string
+          updated_at: string
+          version: number
+          width: number | null
+        }
+        Insert: {
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          asset_type?: Database["public"]["Enums"]["asset_type"]
+          chapter_id?: string | null
+          character_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          file_size?: number | null
+          format?: string | null
+          height?: number | null
+          id?: string
+          location_id?: string | null
+          model?: string | null
+          negative_prompt?: string | null
+          original_storage_path?: string | null
+          processed_storage_path?: string | null
+          prompt?: string | null
+          provider?: string
+          public_url?: string | null
+          scene_id?: string | null
+          source_type?: Database["public"]["Enums"]["source_type"]
+          source_url?: string | null
+          status?: Database["public"]["Enums"]["asset_status"]
+          story_id?: string | null
+          thumbnail_storage_path?: string | null
+          title: string
+          updated_at?: string
+          version?: number
+          width?: number | null
+        }
+        Update: {
+          approved?: boolean
+          approved_at?: string | null
+          approved_by?: string | null
+          asset_type?: Database["public"]["Enums"]["asset_type"]
+          chapter_id?: string | null
+          character_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          file_size?: number | null
+          format?: string | null
+          height?: number | null
+          id?: string
+          location_id?: string | null
+          model?: string | null
+          negative_prompt?: string | null
+          original_storage_path?: string | null
+          processed_storage_path?: string | null
+          prompt?: string | null
+          provider?: string
+          public_url?: string | null
+          scene_id?: string | null
+          source_type?: Database["public"]["Enums"]["source_type"]
+          source_url?: string | null
+          status?: Database["public"]["Enums"]["asset_status"]
+          story_id?: string | null
+          thumbnail_storage_path?: string | null
+          title?: string
+          updated_at?: string
+          version?: number
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "media_assets_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_assets_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "characters"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_assets_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_assets_scene_id_fkey"
+            columns: ["scene_id"]
+            isOneToOne: false
+            referencedRelation: "scenes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "media_assets_story_id_fkey"
+            columns: ["story_id"]
+            isOneToOne: false
+            referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      newsletter_subscribers: {
+        Row: {
+          email: string
+          id: string
+          is_active: boolean
+          subscribed_at: string
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          email: string
+          id?: string
+          is_active?: boolean
+          subscribed_at?: string
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          email?: string
+          id?: string
+          is_active?: boolean
+          subscribed_at?: string
+          unsubscribed_at?: string | null
+        }
+        Relationships: []
+      }
+      production_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -358,6 +749,65 @@ export type Database = {
             columns: ["story_id"]
             isOneToOne: false
             referencedRelation: "stories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scenes: {
+        Row: {
+          camera_direction: string | null
+          chapter_id: string
+          characters_in_scene: string | null
+          created_at: string
+          description: string | null
+          id: string
+          lighting_direction: string | null
+          location_name: string | null
+          mood: string | null
+          scene_number: number
+          status: Database["public"]["Enums"]["asset_status"]
+          title: string
+          updated_at: string
+          visual_prompt: string | null
+        }
+        Insert: {
+          camera_direction?: string | null
+          chapter_id: string
+          characters_in_scene?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lighting_direction?: string | null
+          location_name?: string | null
+          mood?: string | null
+          scene_number: number
+          status?: Database["public"]["Enums"]["asset_status"]
+          title: string
+          updated_at?: string
+          visual_prompt?: string | null
+        }
+        Update: {
+          camera_direction?: string | null
+          chapter_id?: string
+          characters_in_scene?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          lighting_direction?: string | null
+          location_name?: string | null
+          mood?: string | null
+          scene_number?: number
+          status?: Database["public"]["Enums"]["asset_status"]
+          title?: string
+          updated_at?: string
+          visual_prompt?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scenes_chapter_id_fkey"
+            columns: ["chapter_id"]
+            isOneToOne: false
+            referencedRelation: "chapters"
             referencedColumns: ["id"]
           },
         ]
@@ -591,6 +1041,38 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      asset_status:
+        | "draft"
+        | "processing"
+        | "ready"
+        | "approved"
+        | "published"
+        | "rejected"
+        | "failed"
+        | "archived"
+      asset_type:
+        | "cover"
+        | "scene"
+        | "character"
+        | "location"
+        | "thumbnail"
+        | "banner"
+        | "poster"
+        | "social_vertical"
+        | "social_square"
+        | "youtube_thumbnail"
+        | "story_cinematic"
+        | "story_cover"
+        | "other"
+      generation_job_status:
+        | "queued"
+        | "generating"
+        | "processing"
+        | "uploading"
+        | "completed"
+        | "failed"
+        | "cancelled"
+      source_type: "upload" | "external_url" | "ai_generated" | "imported"
       story_status: "ongoing" | "completed" | "coming_soon"
     }
     CompositeTypes: {
@@ -720,6 +1202,41 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      asset_status: [
+        "draft",
+        "processing",
+        "ready",
+        "approved",
+        "published",
+        "rejected",
+        "failed",
+        "archived",
+      ],
+      asset_type: [
+        "cover",
+        "scene",
+        "character",
+        "location",
+        "thumbnail",
+        "banner",
+        "poster",
+        "social_vertical",
+        "social_square",
+        "youtube_thumbnail",
+        "story_cinematic",
+        "story_cover",
+        "other",
+      ],
+      generation_job_status: [
+        "queued",
+        "generating",
+        "processing",
+        "uploading",
+        "completed",
+        "failed",
+        "cancelled",
+      ],
+      source_type: ["upload", "external_url", "ai_generated", "imported"],
       story_status: ["ongoing", "completed", "coming_soon"],
     },
   },
